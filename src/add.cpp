@@ -5,7 +5,8 @@
 #include "src/utils.hpp"
 
 template <typename Dtype>
-void AddGPU(at::Tensor in_a, at::Tensor in_b, at::Tensor out_c) {
+void AddGPU(at::Tensor in_a, at::Tensor in_b, at::Tensor out_c)
+{
   int N = in_a.numel();
   if (N != in_b.numel())
     throw std::invalid_argument(Formatter()
