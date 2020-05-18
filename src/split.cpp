@@ -2,12 +2,13 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-16 18:05:20
+ * @ Modified time: 2020-05-18 11:50:33
  * @ Description: split dense tensor to three spot tensors with hierarchy of different depths.
  */
 
 #include <pybind11/pybind11.h>
-#include "common.hpp"
+#include "commdef.hpp"
+#include "quadtree.hpp"
 
 namespace ms
 {
