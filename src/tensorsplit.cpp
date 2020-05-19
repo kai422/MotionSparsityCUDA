@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-18 11:50:33
+ * @ Modified time: 2020-05-19 22:12:18
  * @ Description: split dense tensor to three spot tensors with hierarchy of different depths.
  */
 

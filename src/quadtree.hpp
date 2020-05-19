@@ -2,18 +2,24 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-18 18:00:57
+ * @ Modified time: 2020-05-19 22:12:20
  * @ Description:
  */
 #ifndef QUADTREE
 #define QUADTREE
 
+#include <bitset>
+#include <vector>
+using std::bitset;
+using std::vector;
+
 namespace ms
 {
     typedef int qt_size_t;
-    typedef int qt_tree_t;
+    typedef bitset<21> qt_tree_t;
     typedef float qt_data_t;
     const int N_TREE_INTS = 2;
+    const int N_QUAD_TREE_T_BITS = 8 * sizeof(qt_tree_t);
 
     struct quadtree
     {
@@ -28,16 +34,19 @@ namespace ms
               grid_capacity(_n * _grid_height * _grid_width),
               data_capacity(_n_leafs * _feature_size)
         {
-            trees = new qt_tree_t[grid_capacity * N_TREE_INTS];
-            prefix_leafs = new qt_size_t[grid_capacity];
-            data = new qt_data_t[data_capacity];
+            trees = new qt_tree_t[grid_capacity]{};
+            prefix_leafs = new qt_size_t[grid_capacity]{};
         };
 
         void resize(qt_size_t _n, qt_size_t _grid_height, qt_size_t _grid_width, qt_size_t _feature_size, qt_size_t _n_leafs);
 
+        void clr_trees();
+
+        int tree_child_bit_idx(const int &bit_idx) const;
+
         ~quadtree();
 
-    private:
+    public:
         qt_size_t n;            ///< number of grid-quadtrees (batch size).
         qt_size_t grid_height;  ///< number of shallow quadtrees in the height dimension.
         qt_size_t grid_width;   ///< number of shallow quadtrees in the width dimension.
@@ -47,7 +56,7 @@ namespace ms
 
         qt_tree_t *trees;        ///< array of length quadtree_num_blocks(grid) x N_TREE_qt_size_tS that encode the structure of the shallow quadtrees as bit strings.
         qt_size_t *prefix_leafs; ///< prefix sum of the number of leafs in each shallow quadtree.
-        qt_data_t *data;         ///< contiguous data array, all feature vectors associated with the grid-quadtree data structure.
+        vector<qt_data_t> data;  ///< contiguous data array, all feature vectors associated with the grid-quadtree data structure.
 
         qt_size_t grid_capacity; ///< Indicates how much memory is allocated for the trees and prefix_leafs array
         qt_size_t data_capacity; ///< Indicates how much memory is allocated for the data array
@@ -79,22 +88,22 @@ namespace ms
             prefix_leafs = new qt_size_t[grid_capacity];
         }
         qt_size_t _data_capacity = n_leafs * feature_size;
-        if (data_capacity < _data_capacity)
-        {
-            data_capacity = _data_capacity;
-            if (data != nullptr)
-            {
-                delete[] data;
-            }
-            data = new qt_data_t[data_capacity];
-        }
+    }
+
+    inline void quadtree::clr_trees()
+    {
+        memset(trees, 0, grid_capacity * N_TREE_INTS);
+    }
+
+    inline int quadtree::tree_child_bit_idx(const int &bit_idx) const
+    {
+        return 4 * bit_idx + 1;
     }
 
     inline quadtree::~quadtree()
     {
         delete[] trees;
         delete[] prefix_leafs;
-        delete[] data;
     }
 } // namespace ms
 
