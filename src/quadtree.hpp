@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-19 22:12:20
+ * @ Modified time: 2020-05-19 22:16:38
  * @ Description:
  */
 #ifndef QUADTREE
@@ -47,19 +47,19 @@ namespace ms
         ~quadtree();
 
     public:
-        qt_size_t n;            ///< number of grid-quadtrees (batch size).
-        qt_size_t grid_height;  ///< number of shallow quadtrees in the height dimension.
-        qt_size_t grid_width;   ///< number of shallow quadtrees in the width dimension.
+        qt_size_t n;            //number of grid-quadtrees (batch size).
+        qt_size_t grid_height;  //number of quadtree grids in the height dimension.
+        qt_size_t grid_width;   //number of quadtrees grids the width dimension.
         qt_size_t feature_size; ///< length of the data vector associated with a single cell.
 
-        qt_size_t n_leafs; ///< number of leaf nodes in the complete struct.
+        qt_size_t n_leafs; //number of leaf nodes in the complete struct.
 
-        qt_tree_t *trees;        ///< array of length quadtree_num_blocks(grid) x N_TREE_qt_size_tS that encode the structure of the shallow quadtrees as bit strings.
-        qt_size_t *prefix_leafs; ///< prefix sum of the number of leafs in each shallow quadtree.
-        vector<qt_data_t> data;  ///< contiguous data array, all feature vectors associated with the grid-quadtree data structure.
+        qt_tree_t *trees;        //array of grids x bitset<21>, each bitset encode the structure of the quadtree grid as bit strings.
+        qt_size_t *prefix_leafs; //prefix sum of the number of leafs in each quadtree grid.
+        vector<qt_data_t> data;  //data array, all feature vectors associated with the grid-quadtree data structure.
 
-        qt_size_t grid_capacity; ///< Indicates how much memory is allocated for the trees and prefix_leafs array
-        qt_size_t data_capacity; ///< Indicates how much memory is allocated for the data array
+        qt_size_t grid_capacity; //indicates how much memory is allocated for the trees and prefix_leafs array
+        qt_size_t data_capacity; //indicates how much memory is allocated for the data array
     };
 
     inline void quadtree::resize(qt_size_t _n, qt_size_t _grid_height, qt_size_t _grid_width, qt_size_t _feature_size, qt_size_t _n_leafs)
