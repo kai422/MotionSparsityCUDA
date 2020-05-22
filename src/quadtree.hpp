@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-19 22:16:38
+ * @ Modified time: 2020-05-22 19:44:52
  * @ Description:
  */
 #ifndef QUADTREE
@@ -38,6 +38,14 @@ namespace ms
             prefix_leafs = new qt_size_t[grid_capacity]{};
         };
 
+        quadtree(const quadtree &in)
+            : n(in.n), grid_height(in.grid_height), grid_width(in.grid_width),
+              feature_size(in.feature_size), n_leafs(in.n_leafs),
+              grid_capacity(in.grid_capacity),
+              data_capacity(in.data_capacity),
+              trees(in.trees),
+              prefix_leafs(in.prefix_leafs){};
+
         void resize(qt_size_t _n, qt_size_t _grid_height, qt_size_t _grid_width, qt_size_t _feature_size, qt_size_t _n_leafs);
 
         void clr_trees();
@@ -50,7 +58,7 @@ namespace ms
         qt_size_t n;            //number of grid-quadtrees (batch size).
         qt_size_t grid_height;  //number of quadtree grids in the height dimension.
         qt_size_t grid_width;   //number of quadtrees grids the width dimension.
-        qt_size_t feature_size; ///< length of the data vector associated with a single cell.
+        qt_size_t feature_size; // length of the data vector associated with a single cell.
 
         qt_size_t n_leafs; //number of leaf nodes in the complete struct.
 
@@ -104,6 +112,17 @@ namespace ms
     {
         delete[] trees;
         delete[] prefix_leafs;
+    }
+
+    template <typename Dtype>
+    quadtree *DenseToQuad(int bs, int ch, int h, int w, Dtype *data_ptr, quadtree &stru)
+    {
+        //pic size 256x256
+        //grid size 64x64
+        //each grid at most 8x8 leaves(at current mv resolution)
+        //each leaf has 8x8 pixels
+        assert(bs == stru->n && ch == stru->feature_size && h / 64 == stru->grid_height && w / 64 == stru->grid_width && "expect input structure has same size with data tensor.");
+        quadtree *out = new quadtree(stru);
     }
 } // namespace ms
 

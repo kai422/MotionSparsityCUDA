@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-19 22:10:01
+ * @ Modified time: 2020-05-22 16:23:29
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  */
@@ -14,22 +14,25 @@
 
 namespace ms
 {
-    class CreateFromDense
+    class CreateFromData
     {
     public:
-        CreateFromDense(int h, int w, int f, const qt_data_t *data_ptr) : grid_height(h), grid_width(w), feature_size(f), data(data_ptr), off_gh(0), off_gw(0)
+        CreateFromData(int h, int w, int f, const qt_data_t *data_ptr) : grid_height(h), grid_width(w), feature_size(f), data(data_ptr), off_gh(0), off_gw(0)
         {
             grid = new quadtree(1, grid_height, grid_width, feature_size);
         };
-        ~CreateFromDense();
+        ~CreateFromData();
         quadtree *operator()(bool fit = false, int fit_multiply = 1, bool pack = false, int n_threads = 1);
 
     private:
         quadtree *create_quadtree(bool fit, int fit_multiply, bool pack);
 
-        qt_data_t get_data(float cx, float cy);
+        qt_data_t get_data(float cx, float cy) const;
 
-        bool isHomogeneous(int centre_x_l1, int centre_y_l1, int size_x, int size_y, int gh, int gw) const {}
+        bool isHomogeneous(int centre_x_l1, int centre_y_l1, int size_x, int size_y, int gh, int gw) const;
+
+        //create stcuture
+        //create fillin data.
         //check if the colors of four color is the same. if it's the same then no need to exploit this grid as a subtree. set it as leaf, return true.
         //if it's not all the same then exploit this grid as a subtree.
 
@@ -45,7 +48,7 @@ namespace ms
         quadtree *grid;
     };
 
-    quadtree *CreateFromDense::create_quadtree(bool fit, int fit_multiply, bool pack)
+    quadtree *CreateFromData::create_quadtree(bool fit, int fit_multiply, bool pack)
     {
         //create quadtree structure by checking the local sparsity and homogeneity.
         int n_blocks = grid_height * grid_width;
@@ -152,6 +155,16 @@ namespace ms
             //assert data_idx
             assert(data_idx == (grid->trees[grid_idx].count() * 3 + 1) && "fillin data_idx wrong");
         }
+    }
+
+    qt_data_t CreateFromData::get_data(float cx, float cy) const
+    {
+        return 0;
+    }
+
+    bool CreateFromData::isHomogeneous(int centre_x_l1, int centre_y_l1, int size_x, int size_y, int gh, int gw) const
+    {
+        return true;
     }
 
 } // namespace ms
