@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-22 16:23:29
+ * @ Modified time: 2020-05-22 21:51:03
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  */
@@ -31,7 +31,7 @@ namespace ms
 
         bool isHomogeneous(int centre_x_l1, int centre_y_l1, int size_x, int size_y, int gh, int gw) const;
 
-        //create stcuture
+        //create structure
         //create fillin data.
         //check if the colors of four color is the same. if it's the same then no need to exploit this grid as a subtree. set it as leaf, return true.
         //if it's not all the same then exploit this grid as a subtree.
