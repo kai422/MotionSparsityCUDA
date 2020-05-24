@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-24 22:31:04
+ * @ Modified time: 2020-05-24 23:05:22
  * @ Description:
  */
 
@@ -110,6 +110,8 @@ namespace ms
         //do pooling
         //below implementation just consider value inside grid are same so we just pick one value from it.
         //224不太好。。 256吧 如果不行再试试224
+        //可以是可以 random shift 有粒度的shift
+        //不过先还是按照不管什么输入都可以的来写吧
         //should implement template like avg max.
         int h_index = int(cx * scale_factor);
         int w_index = int(cy * scale_factor);

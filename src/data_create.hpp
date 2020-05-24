@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-24 22:30:25
+ * @ Modified time: 2020-05-24 22:44:50
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  */
@@ -15,7 +15,7 @@
 
 namespace ms
 {
-    quadtree *CreateFromImg(cv::Mat mv_x, cv::Mat mv_y, int ih = 224, int iw = 224, int f = 2)
+    quadtree *CreateFromImg(cv::Mat mv_x, cv::Mat mv_y, int ih = 256, int iw = 256, int f = 2)
     {
         //TODO:img operation
 
