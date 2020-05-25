@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-24 16:58:51
+ * @ Modified time: 2020-05-25 23:08:07
  * @ Description:
  */
 #ifndef QUADTREE
@@ -48,7 +48,12 @@ namespace ms
         void resize(qt_size_t _n, qt_size_t _grid_height, qt_size_t _grid_width,
                     qt_size_t _feature_size, qt_size_t _n_leafs);
 
-        ~quadtree();
+        ~quadtree()
+        {
+            delete[] trees;
+            delete[] prefix_leafs;
+            delete[] data; //?
+        };
 
     public:
         qt_size_t grid_height;  // number of quadtree grids in the height dimension.
