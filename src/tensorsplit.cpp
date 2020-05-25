@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-25 16:53:01
+ * @ Modified time: 2020-05-25 17:21:29
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -173,7 +173,91 @@ namespace ms
 
     void get_padded_tensor(at::Tensor &input_tensor, at::Tensor &ref)
     {
-        auto input_acc = input_tensor.accessor<float, 2>();
-        auto ref_acc = ref.accessor<float, 2>();
+        //if the position in the input != 0;
+        //then check its neighbor
+        //it == 0
+        //then pad it (i.e. get the value from the ref tensor)
+        auto input_acc = input_tensor.accessor<float, 3>();
+        auto ref_acc = ref.accessor<float, 3>();
+        int nf = input_tensor.size(0);
+        int nx = input_tensor.size(1);
+        int ny = input_tensor.size(2);
+
+        for (int f = 0; f < nf; ++f)
+        {
+            for (int x = 0; x < nx; ++x)
+            {
+                for (int y = 0; y < ny; ++y)
+                {
+                    if (input_acc[f][x][y] != 0)
+                    {
+                        if (x == 0 && y == 0)
+                        {
+                            if (input_acc[f][x + 1][y] == 0)
+                            {
+                                input_acc[f][x + 1][y] = ref_acc[f][x + 1][y];
+                            }
+                            if (input_acc[f][x][y + 1] == 0)
+                            {
+                                input_acc[f][x][y + 1] = ref_acc[f][x][y + 1];
+                            }
+                        }
+                        else if (x == 0 && y == ny - 1)
+                        {
+                            if (input_acc[f][x + 1][y] == 0)
+                            {
+                                input_acc[f][x + 1][y] = ref_acc[f][x + 1][y];
+                            }
+                            if (input_acc[f][x][y - 1] == 0)
+                            {
+                                input_acc[f][x][y - 1] = ref_acc[f][x][y - 1];
+                            }
+                        }
+                        else if (x == nx - 1 && y == 0)
+                        {
+                            if (input_acc[f][x - 1][y] == 0)
+                            {
+                                input_acc[f][x - 1][y] = ref_acc[f][x - 1][y];
+                            }
+                            if (input_acc[f][x][y + 1] == 0)
+                            {
+                                input_acc[f][x][y + 1] = ref_acc[f][x][y + 1];
+                            }
+                        }
+                        else if (x == nx - 1 && y == ny - 1)
+                        {
+                            if (input_acc[f][x - 1][y] == 0)
+                            {
+                                input_acc[f][x - 1][y] = ref_acc[f][x - 1][y];
+                            }
+                            if (input_acc[f][x][y - 1] == 0)
+                            {
+                                input_acc[f][x][y - 1] = ref_acc[f][x][y - 1];
+                            }
+                        }
+                        else
+                        {
+                            if (input_acc[f][x - 1][y] == 0)
+                            {
+                                input_acc[f][x - 1][y] = ref_acc[f][x - 1][y];
+                            }
+                            if (input_acc[f][x + 1][y] == 0)
+                            {
+                                input_acc[f][x + 1][y] = ref_acc[f][x + 1][y];
+                            }
+                            if (input_acc[f][x][y - 1] == 0)
+                            {
+                                input_acc[f][x][y - 1] = ref_acc[f][x][y - 1];
+                            }
+                            if (input_acc[f][x][y + 1] == 0)
+                            {
+                                input_acc[f][x][y + 1] = ref_acc[f][x][y + 1];
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+
 } // namespace ms
