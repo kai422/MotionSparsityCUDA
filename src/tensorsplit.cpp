@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-25 10:45:41
+ * @ Modified time: 2020-05-25 16:53:01
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -19,14 +19,29 @@ namespace ms
     //output Tensor out2 with only second layer.
     //output Tensor out3 with only third layer.
     //template <typename Dtype>
-    void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out1,
-                              at::Tensor &out2, at::Tensor &out3, const quadtree &stru)
+    void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out_l1_r,
+                              at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, quadtree *stru)
     {
+        //please make sure out_l* are zero tensor.
         auto input = input_r;
+        auto out_l1 = out_l1_r;
+        auto out_l2 = out_l2_r;
+        auto out_l3 = out_l3_r;
+        auto out_l4 = out_l4_r;
+
         auto dim = input.ndimension();
-        //c10::IntArrayRef input_sizes = input.sizes();
+
         TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
+        TORCH_CHECK(input.sizes() == out_l1.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
+        TORCH_CHECK(input.sizes() == out_l2.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
+        TORCH_CHECK(input.sizes() == out_l3.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
+        TORCH_CHECK(input.sizes() == out_l4.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
+
         input = input.contiguous();
+        out_l1 = out_l1.contiguous();
+        out_l2 = out_l2.contiguous();
+        out_l3 = out_l3.contiguous();
+        out_l4 = out_l4.contiguous();
 
         auto T = input.size(0);
         auto f = input.size(1);
@@ -36,207 +51,129 @@ namespace ms
             for (auto t = start; t < end; t++)
             {
                 auto input_t = input[t];
+                auto out_l1_t = out_l1[t];
+                auto out_l2_t = out_l2[t];
+                auto out_l3_t = out_l3[t];
+                auto out_l4_t = out_l4[t];
+
                 //create from dense
                 quadtree *input_quad;
-                input_quad = DenseToQuad(f, h, w, input_t.template data_ptr<float>(), stru);
+                input_quad = DenseToQuad(f, h, w, input_t.data_ptr<float>(), stru);
 
-                //split to three tensor
+                //split to three tensor with padding
+                splitQuadToDense(f, h, w, input_quad, out_l1_t.data_ptr<float>(), out_l2_t.data_ptr<float>(), out_l3_t.data_ptr<float>(), out_l4_t.data_ptr<float>());
 
-                //check quad to dense
-
-                //split
-                quadtree *out_tree_1;
-                quadtree *out_tree_2;
-                quadtree *out_tree_3;
-                //input_quad.split(out_tree_1, out_tree_2, out_tree_3);
-
-                //quad to dense
-                //out1 = out_tree_1.toDense();
-                // out2 = out_tree_2.toDense();
-                //out3 = out_tree_3.toDense();
+                get_padded_tensor(out_l1_t, input_t);
+                get_padded_tensor(out_l2_t, input_t);
+                get_padded_tensor(out_l3_t, input_t);
+                get_padded_tensor(out_l4_t, input_t);
             }
-        
-        }
+        });
     }
 
-    // /// Computes the subscript indices for a dense volume for the grid-octree
-    // /// structure grid given the grid_idx and bit_idx.
-    // ///
-    // /// @param grid
-    // /// @param grid_idx
-    // /// @param bit_idx
-    // /// @param n
-    // /// @param h
-    // /// @param w
-    // /// @return depth of the corresponding shallow octree cell (bit_idx).
-    // QUADTREE_FUNCTION
-    // inline int quadtree_ind_to_dense_ind(const quadtree *grid, const int grid_idx, const int bit_idx, int *n, int *h, int *w)
-    // {
-    //     quadtree_split_grid_idx(grid, grid_idx, n, h, w);
-    //     h[0] *= 8;
-    //     w[0] *= 8;
-
-    //     int depth = depth_from_bit_idx(bit_idx);
-    //     if (depth == 1)
-    //     {
-    //         bhw_from_idx_l1(bit_idx, h, w);
-    //     }
-    //     else if (depth == 2)
-    //     {
-    //         bhw_from_idx_l2(bit_idx, h, w);
-    //     }
-    //     else if (depth == 3)
-    //     {
-    //         bhw_from_idx_l3(bit_idx, h, w);
-    //     }
-
-    //     return depth;
-    // }
-    //TODO:pooling in the grid.
-    //TODO:grid pooling to adapt grid tree size.
-    // template <int dense_format>
-    // QUADTREE_FUNCTION inline void dense_to_quadtree_sum_fcn(const qt_data_t *dense, int n, int dense_depth, int dense_height, int dense_width, int feature_size, int h1, int h2, int w1, int w2, qt_data_t *out)
-    // {
-    //     for (int f = 0; f < feature_size; ++f)
-    //     {
-    //         out[f] = 0;
-    //     }
-
-    //     for (int h = h1; h < h2; ++h)
-    //     {
-    //         for (int w = w1; w < w2; ++w)
-    //         {
-    //             for (int f = 0; f < feature_size; ++f)
-    //             {
-    //                 float val;
-    //                 if (dense_format == DENSE_FORMAT_HWC)
-    //                 {
-    //                     val = dense[((n * dense_height + h) * dense_width + w) * feature_size + f];
-    //                 }
-    //                 else if (dense_format == DENSE_FORMAT_CHW)
-    //                 {
-    //                     val = dense[((n * feature_size + f) * dense_height + h) * dense_width + w];
-    //                 }
-    //                 out[f] += val;
-    //             }
-    //         }
-    //     }
-    //     //pool all h1-h2 w1-w2 data into one leaf. (cell)
-    // }
-
-    // /// Pools (avg) all the values of the tensor data dense into the corresponding
-    // /// shallow quadtree cell (out).
-    // ///
-    // /// @tparam dense_format HWC or CHW.
-    // /// @param dense the data of the tensor.
-    // /// @param n batch index.
-    // /// @param dense_height the height of the tensor.
-    // /// @param dense_width the width of the tensor.
-    // /// @param w1 start index for the pooling in width.
-    // /// @param w2 end index for the pooling in width.
-    // /// @param h1 end index for the pooling in height.
-    // /// @param h2 end index for the pooling in height.
-    // /// @param out data array of the output octree cell.
-    // template <int dense_format>
-    // QUADTREE_FUNCTION inline void dense_to_quadtree_avg_fcn(const qt_data_t *dense, int n, int dense_depth, int dense_height, int dense_width, int feature_size, int h1, int h2, int w1, int w2, qt_data_t *out)
-    // {
-    //     dense_to_quadtree_sum_fcn<dense_format>(dense, n, dense_depth, dense_height, dense_width, feature_size, h1, h2, w1, w2, out);
-    //     float norm = (h2 - h1) * (w2 - w1);
-    //     for (int f = 0; f < feature_size; ++f)
-    //     {
-    //         out[f] /= norm;
-    //     }
-    // }
-
-    //template <int dense_format>
-    void quadtree_to_dense_cpu(const quadtree *grid, const int dense_height, const int dense_width, qt_data_t *out_data)
+    void splitQuadToDense(const int &f, const int &tensor_h, const int &tensor_w, quadtree *input_quad, float *out_l1_dst, float *out_l2_dst, float *out_l3_dst, float *out_l4_dst)
     {
-        int n_blocks = grid->num_blocks();
-        int grid_height = grid->grid_height;
-        int grid_width = grid->grid_width;
+        int n_blocks = input_quad->num_blocks();
+        int grid_height = input_quad->grid_height;
+        int grid_width = input_quad->grid_width;
+        int feature_size = input_quad->feature_size;
 
-        if (dense_height < grid_height * 8 || dense_width < grid_width * 8)
-        {
-            printf("[ERROR] dense dim (%d,%d) is smaller then dim of grid (%d,%d,%d)\n",
-                   dense_height, dense_width, grid_height * 8, grid_width * 8);
-            exit(-1);
-        }
-        int vx_height_off = (dense_height - grid_height * 8) / 2;
-        int vx_width_off = (dense_width - grid_width * 8) / 2;
-        //offset from two sides
-        int feature_size = grid->feature_size;
-
-        int n_dense_elems = feature_size * dense_height * dense_width;
-        //#pragma omp parallel for
-        for (int idx = 0; idx < n_dense_elems; ++idx)
-        {
-            out_data[idx] = 0;
-        }
-
+        assert(f == feature_size && ((float)tensor_h / input_quad->grid_height) == ((float)input_quad->grid_width / tensor_w) &&
+               "expect input structure has same size with data tensor.");
+        float scale_factor = (float)tensor_h / grid_height;
         //#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
-            int gh = grid_idx / grid_width;
-            int gw = grid_idx % grid_width;
-            bitset<21UL> &tree = grid->trees[grid_idx];
-            for (int bh = 0; bh < 8; ++bh)
+            bitset<21UL> &grid_tree = input_quad->trees[grid_idx];
+            qt_data_t *grid_data = input_quad->data + input_quad->feature_size * input_quad->prefix_leafs[grid_idx];
+
+            int grid_h_idx = grid_idx / grid_width;
+            int grid_w_idx = grid_idx % grid_width;
+            float centre_x = grid_w_idx * 8 + 4;
+            float centre_y = grid_h_idx * 8 + 4;
+
+            if (tree_isset_bit(grid_tree, 0))
             {
-                for (int bw = 0; bw < 8; ++bw)
+                for (int hl1 = 0; hl1 < 2; ++hl1)
                 {
-                    int vx_h = (gh * 8) + bh + vx_height_off;
-                    int vx_w = (gw * 8) + bw + vx_width_off;
-
-                    int bit_idx = tree_bit_idx(tree, bh, bw);
-                    int data_idx = tree_data_idx(tree, bit_idx, feature_size);
-                    //？
-                    const qt_data_t *data = grid->data + grid->feature_size * grid->prefix_leafs[grid_idx] + data_idx;
-
-                    for (int f = 0; f < feature_size; ++f)
+                    for (int wl1 = 0; wl1 < 2; ++wl1)
                     {
-                        qt_data_t val = data[f];
-                        //dense_format == DENSE_FORMAT_CHW)
-                        int out_idx = ((feature_size + f) * dense_height + vx_h) * dense_width + vx_w;
-                        out_data[out_idx] = val;
+                        int bit_idx_l1 = 1 + hl1 * 2 + wl1;
+                        float centre_x_l1 = centre_x + (wl1 * 4) - 2;
+                        float centre_y_l1 = centre_y + (hl1 * 4) - 2;
+                        if (tree_isset_bit(grid_tree, bit_idx_l1))
+                        {
+                            for (int hl2 = 0; hl2 < 2; ++hl2)
+                            {
+                                for (int wl2 = 0; wl2 < 2; ++wl2)
+                                {
+                                    int bit_idx_l2 = child_idx(bit_idx_l1) + hl2 * 2 + wl2;
+                                    float centre_x_l2 = centre_x_l1 + (wl2 * 2) - 1;
+                                    float centre_y_l2 = centre_y_l1 + (hl2 * 2) - 1;
+                                    if (tree_isset_bit(grid_tree, bit_idx_l2))
+                                    {
+                                        for (int hl3 = 0; hl3 < 2; ++hl3)
+                                        {
+                                            for (int wl3 = 0; wl3 < 2; ++wl3)
+                                            {
+                                                int bit_idx_l3 = child_idx(bit_idx_l2) + hl3 * 2 + wl3;
+                                                float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
+                                                float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
+                                                int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
+                                                get_data_from_tensor(grid_data + data_idx, out_l4_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 0.5, centre_x_l2 + 0.5, centre_y_l2 - 0.5, centre_y_l2 + 0.5);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        int data_idx = tree_data_idx(grid_tree, bit_idx_l2, feature_size);
+                                        save_data_to_tensor(grid_data + data_idx, out_l3_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            int data_idx = tree_data_idx(grid_tree, bit_idx_l1, feature_size);
+                            save_data_to_tensor(grid_data + data_idx, out_l2_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                        }
                     }
+                }
+            }
+            else
+            {
+                //ouput whole grid(cx-4,cx+4,cy-4,cy+4) to out_l1_dst tensor
+                save_data_to_tensor(grid_data, out_l1_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+            }
+        }
+    }
+    void save_data_to_tensor(qt_data_t *src_data, float *dst_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
+    {
+        //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
+        //do pooling into one leaf
+
+        int h1_tensor = int(h1 * scale_factor);
+        int h2_tensor = int(h2 * scale_factor);
+        int w1_tensor = int(w1 * scale_factor);
+        int w2_tensor = int(w2 * scale_factor);
+
+        for (int h = h1_tensor; h < h2_tensor; ++h)
+        {
+            for (int w = w1_tensor; w < w2_tensor; ++w)
+            {
+                for (int f = 0; f < feature_size; ++f)
+                {
+                    float val;
+
+                    dst_tensor[(f * tensor_h + h) * tensor_w + w] = src_data[f];
                 }
             }
         }
     }
 
-    //get the tree bit index of the dense coordinates.
-    inline int tree_bit_idx(const qt_tree_t &tree, const int &bh, const int &bw)
+    void get_padded_tensor(at::Tensor &input_tensor, at::Tensor &ref)
     {
-        //bh bw: the height and width offset inside the grid.
-        const int bit_idx = (1 + 4 + 16) +
-                            (bh / 4 % 2 == 1) * 32 + (bw / 4 % 2 == 1) * 16 +
-                            (bh / 2 % 2 == 1) * 8 + (bw / 2 % 2 == 1) * 4 +
-                            (bh % 2 == 1) * 2 + (bw % 2 == 1) * 1;
-        //1+4+16:
-        //(bh / 4 % 2 == 1) * 32 at lower grid
-        //(bw / 4 % 2 == 1) * 16 at righter grid
-        //(bh / 2 % 2 == 1) * 8  at lower grid of above gird
-        //(bw / 2 % 2 == 1) * 4  at righter grid of above gird
-        //(bh % 2 == 1) * 2 at lower grid of above gird of above above grid
-        //(bw % 2 == 1) * 1 at righter grid of above gird of above above grid
-        if (tree_isset_bit(tree, parent_idx(bit_idx)))
-        {
-            return bit_idx;
-            //third layer
-        }
-        else if (tree_isset_bit(tree, parent_idx(parent_idx(bit_idx))))
-        {
-            return parent_idx(bit_idx);
-            //second layer
-        }
-        else if (tree_isset_bit(tree, 0))
-        {
-            return parent_idx(parent_idx(bit_idx));
-            //first layer
-        }
-        else
-        {
-            return 0;
-            //root
-        }
+        auto input_acc = input_tensor.accessor<float, 2>();
+        auto ref_acc = ref.accessor<float, 2>();
     }
-} //end namespace ms.
+} // namespace ms

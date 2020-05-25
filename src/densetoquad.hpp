@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-25 10:45:22
+ * @ Modified time: 2020-05-25 16:30:57
  * @ Description:
  */
 
@@ -14,21 +14,21 @@
 namespace ms
 {
     // template <typename Dtype>
-    quadtree *DenseToQuad(int f, int tensor_h, int tensor_w, float *data_ptr, const quadtree &stru)
+    quadtree *DenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, float *data_ptr, const quadtree *stru)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         // tensor_size tensor_h x tensor_w (256x256)
         // grid size 64x64
         // each grid at most 8x8 leaves(at current mv resolution)
         // each leaf has 8x8 pixels
-        assert(f == stru.feature_size && ((float)tensor_h / stru.grid_height) == ((float)stru.grid_width / tensor_w) &&
+        assert(f == stru->feature_size && ((float)tensor_h / stru->grid_height) == ((float)stru->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
-        float scale_factor = (float)tensor_h / stru.grid_height;
+        float scale_factor = (float)tensor_h / stru->grid_height;
 
-        quadtree *output = new quadtree(stru);
+        quadtree *output = new quadtree(*stru);
         output->data = new qt_data_t[output->n_leafs * output->feature_size]{};
 
-        int n_blocks = output->grid_height * output->grid_width;
+        int n_blocks = output->num_blocks();
         int grid_width = output->grid_width;
         int grid_height = output->grid_height;
         int feature_size = output->feature_size;
@@ -42,7 +42,6 @@ namespace ms
             int grid_w_idx = grid_idx % grid_width;
             float centre_x = grid_w_idx * 8 + 4;
             float centre_y = grid_h_idx * 8 + 4;
-            int data_idx = 0;
 
             if (tree_isset_bit(grid_tree, 0))
             {
@@ -95,7 +94,7 @@ namespace ms
             else
             {
                 //if not set, average the content
-                get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                get_data_from_tensor(grid_data, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
         }
 
