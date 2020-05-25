@@ -2,13 +2,14 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-23 16:48:15
+ * @ Modified time: 2020-05-25 10:45:41
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
 #include <pybind11/pybind11.h>
 #include <torch/extension.h>
 #include "quadtree.hpp"
+#include "densetoquad.hpp"
 
 namespace ms
 {
@@ -17,13 +18,13 @@ namespace ms
     //output Tensor out1 with only first layer.
     //output Tensor out2 with only second layer.
     //output Tensor out3 with only third layer.
-    template <typename Dtype>
+    //template <typename Dtype>
     void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out1,
                               at::Tensor &out2, at::Tensor &out3, const quadtree &stru)
     {
         auto input = input_r;
         auto dim = input.ndimension();
-        c10::IntArrayRef input_sizes = weight.sizes();
+        //c10::IntArrayRef input_sizes = input.sizes();
         TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
         input = input.contiguous();
 
@@ -37,7 +38,7 @@ namespace ms
                 auto input_t = input[t];
                 //create from dense
                 quadtree *input_quad;
-                input_quad = DenseToQuad(f, h, w, input_t.template data_ptr<Dtype>(), stru);
+                input_quad = DenseToQuad(f, h, w, input_t.template data_ptr<float>(), stru);
 
                 //split to three tensor
 
@@ -47,12 +48,12 @@ namespace ms
                 quadtree *out_tree_1;
                 quadtree *out_tree_2;
                 quadtree *out_tree_3;
-                input_quad.split(out_tree_1, out_tree_2, out_tree_3);
+                //input_quad.split(out_tree_1, out_tree_2, out_tree_3);
 
                 //quad to dense
-                out1 = out_tree_1.toDense();
-                out2 = out_tree_2.toDense();
-                out3 = out_tree_3.toDense();
+                //out1 = out_tree_1.toDense();
+                // out2 = out_tree_2.toDense();
+                //out3 = out_tree_3.toDense();
             }
         
         }
