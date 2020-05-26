@@ -2,14 +2,15 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 11:57:43
+ * @ Modified time: 2020-05-26 12:21:25
  * @ Description: combine sparse tensors with hierarchy of different depths.
  */
 
 #include <pybind11/pybind11.h>
 #include <torch/extension.h>
-#include "quad2dense.hpp"
+#include "quadtodense.hpp"
 #include "quadtree.hpp"
+#include "tensor_common.hpp"
 
 namespace ms
 {
@@ -59,7 +60,7 @@ namespace ms
 
                 //combine from three dense tensor to one gridtree
                 quadtree *output_quad;
-                output_quad = CombineDensetToQuad(f, h, w, output_quad, stru_t, in_l1_t.data_ptr<float>(), in_l2_t.data_ptr<float>(), in_l3_t.data_ptr<float>(), in_l4_t.data_ptr<float>());
+                output_quad = CombineDenseToQuad(f, h, w, output_quad, stru_t, in_l1_t.data_ptr<float>(), in_l2_t.data_ptr<float>(), in_l3_t.data_ptr<float>(), in_l4_t.data_ptr<float>());
 
                 QuadToDense(output_quad, f, h, w, output_t.data_ptr<float>());
 
@@ -68,8 +69,91 @@ namespace ms
         });
     }
 
-    quadtree *CombineDensetToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *output_quad, quadtree *stru, float *int_l1_dst, float *int_l2_dst, float *int_l3_dst, float *int_l4_dst)
+    quadtree *CombineDenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *output, quadtree *stru, float *in_l1_src, float *in_l2_src, float *in_l3_src, float *in_l4_src)
     {
+        //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
+        // tensor_size tensor_h x tensor_w (256x256)
+        // grid size 64x64
+        // each grid at most 8x8 leaves(at current mv resolution)
+        // each leaf has 8x8 pixels
+        assert(f == stru->feature_size && ((float)tensor_h / stru->grid_height) == ((float)stru->grid_width / tensor_w) &&
+               "expect input structure has same size with data tensor.");
+        float scale_factor = (float)tensor_h / stru->grid_height;
+
+        quadtree *output = new quadtree(*stru);
+        output->data = new qt_data_t[output->n_leafs * output->feature_size]{};
+
+        int n_blocks = output->num_blocks();
+        int grid_width = output->grid_width;
+        int grid_height = output->grid_height;
+        int feature_size = output->feature_size;
+        //#pragma omp parallel for
+        for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
+        {
+            bitset<21UL> &grid_tree = output->trees[grid_idx];
+            qt_data_t *grid_data = output->data + output->feature_size * output->prefix_leafs[grid_idx];
+
+            int grid_h_idx = grid_idx / grid_width;
+            int grid_w_idx = grid_idx % grid_width;
+            float centre_x = grid_w_idx * 8 + 4;
+            float centre_y = grid_h_idx * 8 + 4;
+
+            if (tree_isset_bit(grid_tree, 0))
+            {
+                for (int hl1 = 0; hl1 < 2; ++hl1)
+                {
+                    for (int wl1 = 0; wl1 < 2; ++wl1)
+                    {
+                        int bit_idx_l1 = 1 + hl1 * 2 + wl1;
+                        float centre_x_l1 = centre_x + (wl1 * 4) - 2;
+                        float centre_y_l1 = centre_y + (hl1 * 4) - 2;
+                        if (tree_isset_bit(grid_tree, bit_idx_l1))
+                        {
+                            for (int hl2 = 0; hl2 < 2; ++hl2)
+                            {
+                                for (int wl2 = 0; wl2 < 2; ++wl2)
+                                {
+                                    int bit_idx_l2 = child_idx(bit_idx_l1) + hl2 * 2 + wl2;
+                                    float centre_x_l2 = centre_x_l1 + (wl2 * 2) - 1;
+                                    float centre_y_l2 = centre_y_l1 + (hl2 * 2) - 1;
+                                    if (tree_isset_bit(grid_tree, bit_idx_l2))
+                                    {
+                                        for (int hl3 = 0; hl3 < 2; ++hl3)
+                                        {
+                                            for (int wl3 = 0; wl3 < 2; ++wl3)
+                                            {
+                                                int bit_idx_l3 = child_idx(bit_idx_l2) + hl3 * 2 + wl3;
+                                                float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
+                                                float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
+                                                int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
+                                                get_data_from_tensor(grid_data + data_idx, in_l4_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 0.5, centre_x_l2 + 0.5, centre_y_l2 - 0.5, centre_y_l2 + 0.5);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        int data_idx = tree_data_idx(grid_tree, bit_idx_l2, feature_size);
+                                        get_data_from_tensor(grid_data + data_idx, in_l3_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            int data_idx = tree_data_idx(grid_tree, bit_idx_l1, feature_size);
+                            get_data_from_tensor(grid_data + data_idx, in_l2_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //if not set, average the content
+                get_data_from_tensor(grid_data, in_l1_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+            }
+        }
+
+        return output;
     }
 
     void DenseCombineBackwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r, at::Tensor &in_l3_r, at::Tensor &in_l4_r, at::Tensor &output_r, quadtree *structures[])

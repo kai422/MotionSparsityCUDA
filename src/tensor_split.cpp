@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 11:51:56
+ * @ Modified time: 2020-05-26 12:20:48
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -10,6 +10,7 @@
 #include <torch/extension.h>
 #include "quadtree.hpp"
 #include "densetoquad.hpp"
+#include "tensor_common.hpp"
 
 namespace ms
 {
@@ -147,29 +148,6 @@ namespace ms
             {
                 //ouput whole grid(cx-4,cx+4,cy-4,cy+4) to out_l1_dst tensor
                 save_data_to_tensor(grid_data, out_l1_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
-            }
-        }
-    }
-    void save_data_to_tensor(qt_data_t *src_data, float *dst_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
-    {
-        //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
-        //do pooling into one leaf
-
-        int h1_tensor = int(h1 * scale_factor);
-        int h2_tensor = int(h2 * scale_factor);
-        int w1_tensor = int(w1 * scale_factor);
-        int w2_tensor = int(w2 * scale_factor);
-
-        for (int h = h1_tensor; h < h2_tensor; ++h)
-        {
-            for (int w = w1_tensor; w < w2_tensor; ++w)
-            {
-                for (int f = 0; f < feature_size; ++f)
-                {
-                    float val;
-
-                    dst_tensor[(f * tensor_h + h) * tensor_w + w] = src_data[f];
-                }
             }
         }
     }
