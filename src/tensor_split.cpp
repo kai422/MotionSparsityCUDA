@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-25 22:56:05
+ * @ Modified time: 2020-05-26 11:51:56
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -18,6 +18,7 @@ namespace ms
     //output Tensor out1 with only first layer.
     //output Tensor out2 with only second layer.
     //output Tensor out3 with only third layer.
+    //output Tensor out4 with only fourth layer.
     //template <typename Dtype>
     void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out_l1_r,
                               at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, quadtree *structures[])
@@ -50,7 +51,7 @@ namespace ms
         at::parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
             for (auto t = start; t < end; t++)
             {
-                auto stru = structures[t];
+                auto stru_t = structures[t];
                 auto input_t = input[t];
                 auto out_l1_t = out_l1[t];
                 auto out_l2_t = out_l2[t];
@@ -59,7 +60,7 @@ namespace ms
 
                 //create from dense
                 quadtree *input_quad;
-                input_quad = DenseToQuad(f, h, w, input_t.data_ptr<float>(), stru);
+                input_quad = DenseToQuad(f, h, w, input_t.data_ptr<float>(), stru_t);
 
                 //split to three tensor with padding
                 splitQuadToDense(f, h, w, input_quad, out_l1_t.data_ptr<float>(), out_l2_t.data_ptr<float>(), out_l3_t.data_ptr<float>(), out_l4_t.data_ptr<float>());
@@ -262,4 +263,8 @@ namespace ms
         }
     }
 
+    void DenseSplitBackwardCPU(at::Tensor &input_r, at::Tensor &out_l1_r,
+                               at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, quadtree *structures[])
+    {
+    }
 } // namespace ms
