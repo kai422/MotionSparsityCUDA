@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 21:23:11
+ * @ Modified time: 2020-05-27 16:08:49
  * @ Description: combine sparse tensors with hierarchy of different depths.
  */
 
@@ -156,7 +156,7 @@ namespace ms
         return output;
     }
 
-    void DenseCombineBackwardCPU(at::Tensor &grid_in_l1_r, at::Tensor &grid_in_l2_r, at::Tensor &grid_in_l3_r, at::Tensor &grid_in_l4_r, at::Tensor &grad_out_r, quadtree *structures[])
+    void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r, at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r, at::Tensor &grad_out_r, quadtree *structures[])
     {
         auto grad_in_l1 = grad_in_l1_r;
         auto grad_in_l2 = grad_in_l2_r;
