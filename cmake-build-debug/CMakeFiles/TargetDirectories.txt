@@ -1,0 +1,3 @@
+/Users/kai/CLionProjects/MotionSparsity/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/kai/CLionProjects/MotionSparsity/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/kai/CLionProjects/MotionSparsity/cmake-build-debug/CMakeFiles/MotionSparsity.dir
