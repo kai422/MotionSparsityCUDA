@@ -6,4 +6,4 @@ b = torch.rand(2)
 c = torch.rand(2)
 
 out = add_cpp.AddCPU(a, b, c)
-print(type(out))
+add_cpp.printCPU(out)

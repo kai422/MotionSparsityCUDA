@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-25 23:08:07
+ * @ Modified time: 2020-05-31 00:01:07
  * @ Description:
  */
 #ifndef QUADTREE
@@ -26,6 +26,10 @@ namespace ms
     struct quadtree
     {
     public:
+        quadtree() : grid_height(0), grid_width(0),
+                     feature_size(0), n_leafs(0),
+                     grid_capacity(0){};
+
         quadtree(qt_size_t _grid_height = 0, qt_size_t _grid_width = 0,
                  qt_size_t _feature_size = 0)
             : grid_height(_grid_height), grid_width(_grid_width),
@@ -68,6 +72,7 @@ namespace ms
                                  // trees and prefix_leafs array
     };
 
+    /*
     inline void quadtree::resize(qt_size_t _n, qt_size_t _grid_height,
                                  qt_size_t _grid_width, qt_size_t _feature_size,
                                  qt_size_t _n_leafs)
@@ -96,6 +101,7 @@ namespace ms
         }
         qt_size_t _data_capacity = n_leafs * feature_size;
     }
+    */
 
     inline qt_size_t quadtree::num_blocks() const
     {

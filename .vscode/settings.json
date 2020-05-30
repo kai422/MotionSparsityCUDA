@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/kai422/anaconda3/envs/PyTorch/bin/python",
+    "python.pythonPath": "/Users/kai/anaconda3/envs/python37/bin/python",
     "files.associations": {
         "__hash_table": "cpp",
         "__split_buffer": "cpp",
@@ -90,5 +90,6 @@
         "hevc",
         "ndimension",
         "qtree"
-    ]
+    ],
+    "cmake.configureOnOpen": true
 }
