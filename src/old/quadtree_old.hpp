@@ -27,10 +27,11 @@ namespace ms
     {
     public:
         quadtree(qt_size_t _grid_height = 0, qt_size_t _grid_width = 0,
-                 qt_size_t _feature_size = 0)
+                 qt_size_t _feature_size = 0, qt_size_t _n_leafs = 0)
             : grid_height(_grid_height), grid_width(_grid_width),
-              feature_size(_feature_size), n_leafs(0),
-              grid_capacity(_grid_height * _grid_width)
+              feature_size(_feature_size), n_leafs(_n_leafs),
+              grid_capacity(_grid_height * _grid_width),
+              data_capacity(_n_leafs * _feature_size)
         {
             trees = new qt_tree_t[grid_capacity]{};
             prefix_leafs = new qt_size_t[grid_capacity]{};
@@ -39,7 +40,7 @@ namespace ms
         quadtree(const quadtree &in)
             : grid_height(in.grid_height), grid_width(in.grid_width),
               feature_size(in.feature_size), n_leafs(in.n_leafs),
-              grid_capacity(in.grid_capacity),
+              grid_capacity(in.grid_capacity), data_capacity(in.data_capacity),
               trees(in.trees), prefix_leafs(in.prefix_leafs){};
 
         qt_size_t num_blocks() const;
@@ -51,6 +52,7 @@ namespace ms
         {
             delete[] trees;
             delete[] prefix_leafs;
+            delete[] data; //?
         };
 
     public:
@@ -63,9 +65,13 @@ namespace ms
         qt_tree_t *trees;        // array of grids x bitset<21>, each bitset encode the
                                  // structure of the quadtree grid as bit strings.
         qt_size_t *prefix_leafs; // prefix sum of the number of leafs in each quadtree grid.
+        qt_data_t *data;         // data array, all feature vectors associated with
+                                 // the grid-quadtree data structure.
 
         qt_size_t grid_capacity; // indicates how much memory is allocated for the
                                  // trees and prefix_leafs array
+        qt_size_t data_capacity; // indicates how much memory is allocated for the
+                                 // data array
     };
 
     inline void quadtree::resize(qt_size_t _n, qt_size_t _grid_height,

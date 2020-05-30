@@ -1,20 +1,25 @@
 cmake_minimum_required(VERSION 3.16)
-SET(CMAKE_CXX_COMPILER /usr/local/bin/g++-9)
 
 project(MotionSparsity)
 
-set(CMAKE_PREFIX_PATH "/Users/kai/CLionProjects/libtorch/share/cmake/Torch")
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/libtorch/share/cmake/Torch")
+set(PYTHON_INCLUDE_DIRS "$ENV{HOME}/anaconda3/envs/PyTorch/include/python3.7m")
+set(PYTHON_LIBRARIES "$ENV{HOME}/anaconda3/envs/PyTorch/lib/libpython3.7m.so")
+set(PYTORCH_INCLUDE_DIRS 
+"$ENV{HOME}/anaconda3/envs/PyTorch/lib/python3.7/site-packages/torch/include"
+"$ENV{HOME}/anaconda3/envs/PyTorch/lib/python3.7/site-packages/torch/include/torch/csrc/api/include"
+"$ENV{HOME}/anaconda3/envs/PyTorch/lib/python3.7/site-packages/torch/include/TH"
+"$ENV{HOME}/anaconda3/envs/PyTorch/lib/python3.7/site-packages/torch/include/THC")
+set(PYTORCH_LIBRARIES "$ENV{HOME}/anaconda3/envs/PyTorch/lib/python3.7/site-packages/torch/lib")
 
-find_package(Torch REQUIRED)        # find required libtorch
+#find_package(Torch REQUIRED)        # find required libtorch
 find_package(OpenCV REQUIRED)       # find required opencv
-find_package(PythonLibs REQUIRED)
+#find_package(PythonLibs REQUIRED)
 
-if (NOT Torch_FOUND)
-    message(FATAL_ERROR "Pytorch Not Found!")
-endif (NOT Torch_FOUND)
 
 message(STATUS "Pytorch status:")
-message(STATUS "    libraries: ${TORCH_LIBRARIES}")
+message(STATUS "    include path: ${PYTORCH_INCLUDE_DIRS}")
+message(STATUS "    libraries: ${PYTORCH_LIBRARIES}")
 
 message(STATUS "OpenCV library status:")
 message(STATUS "    version: ${OpenCV_VERSION}")
@@ -29,7 +34,7 @@ message(STATUS "    include path: ${PYTHON_INCLUDE_DIRS}")
 
 #add_subdirectory(libraries)
 #add_subdirectory(executables)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 add_executable(MotionSparsity
         src/add.cpp
         #src/data_create.cpp
@@ -43,12 +48,12 @@ add_executable(MotionSparsity
 target_include_directories(MotionSparsity
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${TORCH_INCLUDE_DIRS}
+        ${PYTORCH_INCLUDE_DIRS}
         ${PYTHON_INCLUDE_DIRS})
 
 target_link_libraries(MotionSparsity
         PUBLIC
-        ${TORCH_LIBRARIES}
+        ${PYTORCH_LIBRARIES}
         ${OpenCV_LIBS}
         ${PYTHON_LIBRARIES})
 set_property(TARGET MotionSparsity PROPERTY CXX_STANDARD 14)
