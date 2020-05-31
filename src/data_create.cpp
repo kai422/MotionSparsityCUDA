@@ -50,7 +50,6 @@ namespace ms
 
     void create_quadtree_structure(int grid_h, int grid_w, int f, at::Tensor input_t, int tensor_h, int tensor_w, quadtree **ptr_stru_t)
     {
-        auto input_accessor = input_t.accessor<float, 4>();
         quadtree *grid = new quadtree(grid_h, grid_w, f);
         *ptr_stru_t = grid;
         float scale_factor = (float)tensor_h / (grid_h * 8); //should be 256/(8*4)=8
@@ -115,12 +114,12 @@ namespace ms
 
     ptr_wrapper<quadtree *> CreateFromDense(at::Tensor &input)
     {
+        auto dim = input.ndimension();
+        TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
         auto T = input.size(0);
         auto f = input.size(1);
         auto h = input.size(2);
         auto w = input.size(3);
-        auto dim = input.ndimension();
-        TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
         TORCH_CHECK(f == 2, "MotionSparsityError: expected 2 channel tensor");
         TORCH_CHECK(h == 256, "MotionSparsityError: expected tensor with height 256");
         TORCH_CHECK(w == 256, "MotionSparsityError: expected tensor with width 256");
