@@ -2,44 +2,52 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-24 22:44:50
+ * @ Modified time: 2020-05-31 10:53:17
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  *                based on octnet.
  */
 
 #include "quadtree.hpp"
+#include "common.hpp"
 #include <torch/extension.h>
 #include <math.h>
 
 namespace ms
 {
-    quadtree **CreateFromDense(at::Tensor &input)
-    {
-        auto T = input.size(0);
-        auto f = input.size(1);
-        auto h = input.size(2);
-        auto w = input.size(3);
-        auto dim = input.ndimension();
-        TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
-        TORCH_CHECK(f == 2, "MotionSparsityError: expected 2 channel tensor");
-        TORCH_CHECK(h == 256, "MotionSparsityError: expected tensor with height 256");
-        TORCH_CHECK(w == 256, "MotionSparsityError: expected tensor with width 256");
-        int grid_h = 4;
-        int grid_w = 4;
-        quadtree **ptr_strus = new quadtree *[T] {};
-        at::parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
-            for (auto t = start; t < end; t++)
-            {
-                auto input_t = input[t];
-                quadtree **ptr_stru_t = ptr_strus + t;
-                create_quadtree_structure(grid_h, grid_w, f, input_t, h, w, ptr_stru_t);
-                //convert gridtree to dense tensor
-            }
-        });
 
-        return ptr_strus;
+    bool isHomogeneous(const at::Tensor &input_t, const float &centre_x, const float &centre_y, const float &size, const float &scale_factor)
+    {
+        //is the value inside this grid is all the same.
+        //check if the colors of four corner is the same. if it's the same then no need to exploit this grid as a subtree. set it as leaf, return true.
+        //if it's not all the same then exploit this grid as a subtree.
+        auto data = input_t.accessor<float, 3>(); //channel, x, y.
+        float x_broder_left = centre_x - size / 2;
+        float x_broder_right = centre_x + size / 2;
+        float y_broder_up = centre_y - size / 2;
+        float y_broder_down = centre_y + size / 2;
+
+        int x_start = ceil((x_broder_left + 0.5) * scale_factor);
+        int x_end = floor((x_broder_right - 0.5) * scale_factor);
+        int y_start = ceil((y_broder_up + 0.5) * scale_factor);
+        int y_end = floor((y_broder_down - 0.5) * scale_factor);
+
+        bool isHomo = true;
+        /*
+            x_start,y_start -------------------- x_start, y_end
+            \                                               \
+            \                                               \
+            \                                               \
+            \                                               \
+            x_end,y_start  ---------------------- x_end, y_end
+        */
+        bool isHomo_ch1 = (data[0][x_start][y_start] == data[0][x_start][y_end]) && (data[0][x_end][y_start] == data[0][x_end][y_end]) && (data[0][x_start][y_start] == data[0][x_end][y_start]);
+
+        bool isHomo_ch2 = (data[1][x_start][y_start] == data[1][x_start][y_end]) && (data[1][x_end][y_start] == data[1][x_end][y_end]) && (data[1][x_start][y_start] == data[1][x_end][y_start]);
+
+        return isHomo_ch1 & isHomo_ch2;
     }
+
     void create_quadtree_structure(int grid_h, int grid_w, int f, at::Tensor input_t, int tensor_h, int tensor_w, quadtree **ptr_stru_t)
     {
         auto input_accessor = input_t.accessor<float, 4>();
@@ -105,36 +113,31 @@ namespace ms
         }
     }
 
-    bool isHomogeneous(const at::Tensor &input_t, const float &centre_x, const float &centre_y, const float &size, const float &scale_factor)
+    ptr_wrapper<quadtree *> CreateFromDense(at::Tensor &input)
     {
-        //is the value inside this grid is all the same.
-        //check if the colors of four corner is the same. if it's the same then no need to exploit this grid as a subtree. set it as leaf, return true.
-        //if it's not all the same then exploit this grid as a subtree.
-        auto data = input_t.accessor<float, 3>(); //channel, x, y.
-        float x_broder_left = centre_x - size / 2;
-        float x_broder_right = centre_x + size / 2;
-        float y_broder_up = centre_y - size / 2;
-        float y_broder_down = centre_y + size / 2;
+        auto T = input.size(0);
+        auto f = input.size(1);
+        auto h = input.size(2);
+        auto w = input.size(3);
+        auto dim = input.ndimension();
+        TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
+        TORCH_CHECK(f == 2, "MotionSparsityError: expected 2 channel tensor");
+        TORCH_CHECK(h == 256, "MotionSparsityError: expected tensor with height 256");
+        TORCH_CHECK(w == 256, "MotionSparsityError: expected tensor with width 256");
+        int grid_h = 4;
+        int grid_w = 4;
+        quadtree **ptr_strus = new quadtree *[T] {};
+        int64_t start = 0;
+        int64_t end = T;
+        for (auto t = start; t < end; t++)
+        {
+            auto input_t = input[t];
+            quadtree **ptr_stru_t = ptr_strus + t;
+            create_quadtree_structure(grid_h, grid_w, f, input_t, h, w, ptr_stru_t);
+            //convert gridtree to dense tensor
+        }
 
-        int x_start = ceil((x_broder_left + 0.5) * scale_factor);
-        int x_end = floor((x_broder_right - 0.5) * scale_factor);
-        int y_start = ceil((y_broder_up + 0.5) * scale_factor);
-        int y_end = floor((y_broder_down - 0.5) * scale_factor);
-
-        bool isHomo = true;
-        /*
-            x_start,y_start -------------------- x_start, y_end
-            \                                               \
-            \                                               \
-            \                                               \
-            \                                               \
-            x_end,y_start  ---------------------- x_end, y_end
-        */
-        bool isHomo_ch1 = (data[0][x_start][y_start] == data[0][x_start][y_end]) && (data[0][x_end][y_start] == data[0][x_end][y_end]) && (data[0][x_start][y_start] == data[0][x_end][y_start]);
-
-        bool isHomo_ch2 = (data[1][x_start][y_start] == data[1][x_start][y_end]) && (data[1][x_end][y_start] == data[1][x_end][y_end]) && (data[1][x_start][y_start] == data[1][x_end][y_start]);
-
-        return isHomo_ch1 & isHomo_ch2;
+        return ptr_strus;
     }
 
 } // namespace ms

@@ -1,9 +1,9 @@
 import torch
 import add_cpp
+import MotionSparsityBackend
 
-a = torch.rand(2)
+
 b = torch.rand(2)
-c = torch.rand(2)
+a = torch.zeros(2,2,256,256)
 
-out = add_cpp.AddCPU(a, b, c)
-add_cpp.printCPU(out)
+quadtree = MotionSparsityBackend.CreateFromDense(b)

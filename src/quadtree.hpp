@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-31 00:01:07
+ * @ Modified time: 2020-05-31 10:19:59
  * @ Description:
  */
 #ifndef QUADTREE
@@ -43,8 +43,8 @@ namespace ms
         quadtree(const quadtree &in)
             : grid_height(in.grid_height), grid_width(in.grid_width),
               feature_size(in.feature_size), n_leafs(in.n_leafs),
-              grid_capacity(in.grid_capacity),
-              trees(in.trees), prefix_leafs(in.prefix_leafs){};
+              trees(in.trees), prefix_leafs(in.prefix_leafs),
+              grid_capacity(in.grid_capacity){};
 
         qt_size_t num_blocks() const;
 
@@ -108,10 +108,24 @@ namespace ms
         return grid_height * grid_width;
     }
 
-    inline quadtree::~quadtree()
+    inline int bitset_count0(const qt_tree_t &tree, const int from, const int to)
     {
-        delete[] trees;
-        delete[] prefix_leafs;
+        assert(from >= 0 && to <= tree.size());
+        int count = 0;
+        for (int i = from; i < to; ++i)
+        {
+            count += !tree[i];
+        }
+        return count;
+    }
+
+    inline int parent_idx(const int &bit_idx) { return (bit_idx - 1) / 4; }
+
+    inline int child_idx(const int &bit_idx) { return 4 * bit_idx + 1; }
+
+    inline bool tree_isset_bit(const qt_tree_t &tree, const int &idx)
+    {
+        return tree.test(idx);
     }
 
     //get data index using tree bit index of particular leaf
@@ -133,26 +147,6 @@ namespace ms
             data_idx += bit_idx - 21;
         }
         return data_idx * feature_size;
-    }
-
-    inline int parent_idx(const int &bit_idx) { return (bit_idx - 1) / 4; }
-
-    inline int child_idx(const int &bit_idx) { return 4 * bit_idx + 1; }
-
-    inline bool tree_isset_bit(const qt_tree_t &tree, const int &idx)
-    {
-        return tree.test(idx);
-    }
-
-    inline int bitset_count0(const qt_tree_t &tree, const int from, const int to)
-    {
-        assert(from >= 0 && to <= tree.size());
-        int count = 0;
-        for (int i = from; i < to; ++i)
-        {
-            count += !tree[i];
-        }
-        return count;
     }
 
 } // namespace ms

@@ -1,8 +1,13 @@
-template <typename Dtype>
-int *AddCPU(at::Tensor in_a, at::Tensor in_b, at::Tensor out_c);
+#ifndef EXTERN
+#define EXTERN
+
+#include "quadtree.hpp"
+#include "common.hpp"
 
 namespace ms
 {
-    quadtree **CreateFromDense(at::Tensor &input);
+    ptr_wrapper<quadtree *> CreateFromDense(at::Tensor &input);
 
 }
+
+#endif
