@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 12:23:28
+ * @ Modified time: 2020-06-01 22:19:31
  * @ Description:
  */
 
@@ -56,7 +56,6 @@ namespace ms
 
         int n_blocks = output->num_blocks();
         int grid_width = output->grid_width;
-        int grid_height = output->grid_height;
         int feature_size = output->feature_size;
         //#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
@@ -97,7 +96,7 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 0.5, centre_x_l2 + 0.5, centre_y_l2 - 0.5, centre_y_l2 + 0.5);
+                                                get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }

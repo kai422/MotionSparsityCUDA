@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 12:18:41
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 21:17:05
+ * @ Modified time: 2020-06-01 23:06:00
  * @ Description:
  */
 
@@ -12,7 +12,7 @@
 #include "quadtree.hpp"
 namespace ms
 {
-    void save_data_to_tensor(qt_data_t *src_data, float *dst_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
+    inline void save_data_to_tensor(qt_data_t *src_data, float *dst_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         //do pooling into one leaf
@@ -28,15 +28,13 @@ namespace ms
             {
                 for (int f = 0; f < feature_size; ++f)
                 {
-                    float val;
-
                     dst_tensor[(f * tensor_h + h) * tensor_w + w] = src_data[f];
                 }
             }
         }
     }
 
-    void get_data_from_tensor(qt_data_t *dst, float *src_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
+    inline void get_data_from_tensor(qt_data_t *dst, float *src_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         //do pooling into one leaf
@@ -73,7 +71,7 @@ namespace ms
         }
     }
 
-    void assign_data_among_tensor(float *dst_tensor, float *src_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
+    inline void assign_data_among_tensor(float *dst_tensor, float *src_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
 
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index

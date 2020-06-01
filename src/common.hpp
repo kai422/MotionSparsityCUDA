@@ -1,6 +1,8 @@
 #ifndef COMMON
 #define COMMON
 
+#define _unused(x) ((void)(x))
+
 template <class T>
 class ptr_wrapper
 {

@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-31 10:53:17
+ * @ Modified time: 2020-06-01 22:49:34
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  *                based on octnet.
@@ -32,7 +32,6 @@ namespace ms
         int y_start = ceil((y_broder_up + 0.5) * scale_factor);
         int y_end = floor((y_broder_down - 0.5) * scale_factor);
 
-        bool isHomo = true;
         /*
             x_start,y_start -------------------- x_start, y_end
             \                                               \

@@ -20,7 +20,7 @@ namespace ms
                                  at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r,
                                  at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures);
 
-    void quadtree_pool2x2_stru(ptr_wrapper<quadtree *> structures, const int n);
+    void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
 } // namespace ms
 
 #endif

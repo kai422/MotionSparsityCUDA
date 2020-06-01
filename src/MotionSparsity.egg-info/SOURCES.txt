@@ -1,6 +1,9 @@
 data_create.cpp
+grid_pool.cpp
 pybind.cpp
 setup.py
+tensor_combine.cpp
+tensor_split.cpp
 ./data_create.cpp
 ./pybind.cpp
 MotionSparsity.egg-info/PKG-INFO

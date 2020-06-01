@@ -1,5 +1,13 @@
 from setuptools import setup, Extension
+
 from torch.utils import cpp_extension
+
+
+class BuildExt(cpp_extension.BuildExtension):
+    def build_extensions(self):
+        self.compiler.compiler_so.remove('-Wstrict-prototypes')
+        super(BuildExt, self).build_extensions()
+
 
 setup(name="MotionSparsity",
       version="0.0.1",
@@ -11,4 +19,4 @@ setup(name="MotionSparsity",
                                          'pybind.cpp'
                                      ])
       ],
-      cmdclass={'build_ext': cpp_extension.BuildExtension})
+      cmdclass={'build_ext': BuildExt})

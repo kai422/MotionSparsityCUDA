@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:11:08
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 20:21:07
+ * @ Modified time: 2020-06-01 21:26:43
  * @ Description:
  */
 
@@ -32,12 +32,13 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "quadtree.hpp"
+#include "grid_pool.hpp"
 #include "common.hpp"
 
 namespace ms
 {
 
-    void quadtree_pool2x2_stru(const ptr_wrapper<quadtree *> structures, const int n)
+    void quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
     {
         for (int i = 0; i < n; ++i)
         {
@@ -48,7 +49,7 @@ namespace ms
         }
     }
 
-    quadtree *quadtree_pool2x2_stru(const quadtree *in)
+    quadtree *quadtree_pool2x2_stru(quadtree *in)
     {
         if (in->grid_height % 2 != 0 || in->grid_width % 2 != 0)
         {

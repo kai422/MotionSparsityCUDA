@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 11:40:38
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-26 12:21:52
+ * @ Modified time: 2020-06-01 22:02:15
  * @ Description:
  */
 
@@ -40,7 +40,7 @@
 namespace ms
 {
     // template <typename Dtype>
-    quadtree *QuadToDense(quadtree *input_quad, const int &f, const int &tensor_h, const int &tensor_w, float *out_data_dst)
+    void QuadToDense(quadtree *input_quad, const int &f, const int &tensor_h, const int &tensor_w, float *out_data_dst)
     {
         int n_blocks = input_quad->num_blocks();
         int grid_height = input_quad->grid_height;
@@ -89,7 +89,7 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                get_data_from_tensor(grid_data + data_idx, out_data_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 0.5, centre_x_l2 + 0.5, centre_y_l2 - 0.5, centre_y_l2 + 0.5);
+                                                get_data_from_tensor(grid_data + data_idx, out_data_dst, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }
