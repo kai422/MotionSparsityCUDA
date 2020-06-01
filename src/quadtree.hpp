@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-05-31 10:19:59
+ * @ Modified time: 2020-06-01 20:19:41
  * @ Description:
  */
 #ifndef QUADTREE
@@ -55,6 +55,7 @@ namespace ms
         {
             delete[] trees;
             delete[] prefix_leafs;
+            delete[] data;
         };
 
     public:
@@ -67,6 +68,8 @@ namespace ms
         qt_tree_t *trees;        // array of grids x bitset<21>, each bitset encode the
                                  // structure of the quadtree grid as bit strings.
         qt_size_t *prefix_leafs; // prefix sum of the number of leafs in each quadtree grid.
+
+        qt_data_t *data;
 
         qt_size_t grid_capacity; // indicates how much memory is allocated for the
                                  // trees and prefix_leafs array

@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 20:20:26
+ * @ Modified time: 2020-06-01 16:22:12
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -15,11 +15,16 @@
 namespace ms
 {
 
-    template <typename Dtype>
+    //input Tensor in
+    //output Tensor out1 with only first layer.
+    //output Tensor out2 with only second layer.
+    //output Tensor out3 with only third layer.
+    //output Tensor out4 with only fourth layer.
+    //template <typename Dtype>
     void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out_l1_r,
                               at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, ptr_wrapper<quadtree *> structures)
     {
-        //please make sure out_l_r are zero tensor.
+        //please make sure out_l* are zero tensor.
         auto input = input_r;
         auto out_l1 = out_l1_r;
         auto out_l2 = out_l2_r;
@@ -44,28 +49,30 @@ namespace ms
         auto f = input.size(1);
         auto h = input.size(2);
         auto w = input.size(3);
-        for (auto t = start; t < end; t++)
-        {
-            auto stru_t = structures[t];
-            auto input_t = input[t];
-            auto out_l1_t = out_l1[t];
-            auto out_l2_t = out_l2[t];
-            auto out_l3_t = out_l3[t];
-            auto out_l4_t = out_l4[t];
+        at::parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
+            for (auto t = start; t < end; t++)
+            {
+                auto stru_t = structures[t];
+                auto input_t = input[t];
+                auto out_l1_t = out_l1[t];
+                auto out_l2_t = out_l2[t];
+                auto out_l3_t = out_l3[t];
+                auto out_l4_t = out_l4[t];
 
-            //create from dense
-            quadtree *input_quad;
-            input_quad = DenseToQuad(f, h, w, input_t.data_ptr<Dtype>(), stru_t);
+                //create from dense
+                quadtree *input_quad;
+                input_quad = DenseToQuad(f, h, w, input_t.data_ptr<float>(), stru_t);
 
-            //split to three tensor with padding
-            splitQuadToDense(f, h, w, input_quad, out_l1_t.data_ptr<Dtype>(), out_l2_t.data_ptr<Dtype>(), out_l3_t.data_ptr<Dtype>(), out_l4_t.data_ptr<Dtype>());
+                //split to three tensor with padding
+                splitQuadToDense(f, h, w, input_quad, out_l1_t.data_ptr<float>(), out_l2_t.data_ptr<float>(), out_l3_t.data_ptr<float>(), out_l4_t.data_ptr<float>());
 
-            get_padded_tensor(out_l1_t, input_t);
-            get_padded_tensor(out_l2_t, input_t);
-            get_padded_tensor(out_l3_t, input_t);
-            get_padded_tensor(out_l4_t, input_t);
-            //dtor 想想怎么写
-        }
+                get_padded_tensor(out_l1_t, input_t);
+                get_padded_tensor(out_l2_t, input_t);
+                get_padded_tensor(out_l3_t, input_t);
+                get_padded_tensor(out_l4_t, input_t);
+                //dtor 想想怎么写
+            }
+        });
     }
 
     void splitQuadToDense(const int &f, const int &tensor_h, const int &tensor_w, quadtree *input_quad, float *out_l1_dst, float *out_l2_dst, float *out_l3_dst, float *out_l4_dst)
@@ -235,7 +242,7 @@ namespace ms
     }
 
     void DenseSplitBackwardCPU(at::Tensor &grad_in_r, at::Tensor &grad_out_l1_r,
-                               at::Tensor &grad_out_l2_r, at::Tensor &grad_out_l3_r, at::Tensor &grad_out_l4_r, ptr_wrapper<quadtree *> structures)
+                               at::Tensor &grad_out_l2_r, at::Tensor &grad_out_l3_r, at::Tensor &grad_out_l4_r, quadtree *structures[])
     {
         auto grad_out_l1 = grad_out_l1_r;
         auto grad_out_l2 = grad_out_l2_r;

@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 20:20:40
+ * @ Modified time: 2020-05-27 16:08:49
  * @ Description: combine sparse tensors with hierarchy of different depths.
  */
 
@@ -22,7 +22,7 @@ namespace ms
 
     //out Tensor out
     //template <typename Dtype>
-    void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r, at::Tensor &in_l3_r, at::Tensor &in_l4_r, at::Tensor &output_r, ptr_wrapper<quadtree *> structures)
+    void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r, at::Tensor &in_l3_r, at::Tensor &in_l4_r, at::Tensor &output_r, quadtree *structures[])
     {
         auto in_l1 = in_l1_r;
         auto in_l2 = in_l2_r;
@@ -156,7 +156,7 @@ namespace ms
         return output;
     }
 
-    void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r, at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r, at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures)
+    void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r, at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r, at::Tensor &grad_out_r, quadtree *structures[])
     {
         auto grad_in_l1 = grad_in_l1_r;
         auto grad_in_l2 = grad_in_l2_r;
