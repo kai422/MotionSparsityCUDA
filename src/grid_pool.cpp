@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:11:08
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 21:26:43
+ * @ Modified time: 2020-06-02 19:53:09
  * @ Description:
  */
 
@@ -37,8 +37,11 @@
 
 namespace ms
 {
+    void grid_free()
+    {
+    }
 
-    void quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
+    ptr_wrapper<quadtree *> quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
     {
         for (int i = 0; i < n; ++i)
         {
