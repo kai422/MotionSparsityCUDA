@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-06-03 17:57:36
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-05 16:24:19
+ * @ Modified time: 2020-06-05 22:40:48
  * @ Description:
  */
 
@@ -10,10 +10,9 @@
 
 namespace ms
 {
-    void SaveQuadStruAsImg(ptr_wrapper<quadtree *> structures, at::Tensor quadstrus_img)
+    void SaveQuadStruAsImg(ptr_wrapper<quadtree *> structures, torch::Tensor img)
     {
-        at::Tensor &img = quadstrus_img; //t h w c
-        img = img.contiguous();
+        img = img.contiguous(); //t h w c
         auto dim = img.ndimension();
 
         TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
@@ -21,7 +20,7 @@ namespace ms
         auto T = img.size(0);
         auto h = img.size(1);
         auto w = img.size(2);
-        auto c = img.size(3);
+        //auto c = img.size(3);
         int64_t start = 0;
         int64_t end = T;
         for (auto t = start; t < end; t++)
@@ -29,7 +28,7 @@ namespace ms
             auto stru_t = structures[t];
             auto img_t = img[t];
 
-            auto dst = img_t.data_ptr<float>();
+            auto dst = img_t.accessor<float, 3>();
 
             float scale_factor = (float)h / stru_t->grid_height;
 
@@ -97,7 +96,7 @@ namespace ms
             }
         }
     }
-    inline void assign_pixel_to_tensor(int level, float *dst_tensor, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
+    inline void assign_pixel_to_tensor(const int &level, torch::TensorAccessor<float, 3, torch::DefaultPtrTraits> img, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
         // h w f
         // f h w
@@ -140,9 +139,9 @@ namespace ms
         {
             for (int w = w1_tensor; w < w2_tensor; ++w)
             {
-                dst_tensor[(h * tensor_w + w) * 3] = g;
-                dst_tensor[(h * tensor_w + w) * 3 + 1] = b;
-                dst_tensor[(h * tensor_w + w) * 3 + 2] = r;
+                img[h][w][0] = g;
+                img[h][w][1] = b;
+                img[h][w][2] = r;
             }
         }
     }

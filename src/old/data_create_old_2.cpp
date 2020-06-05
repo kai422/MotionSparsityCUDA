@@ -2,14 +2,13 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-05 22:18:45
+ * @ Modified time: 2020-06-05 22:10:54
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  *                based on octnet.
  */
 
 #include "quadtree.hpp"
-#include "data_create.hpp"
 #include "common.hpp"
 #include <torch/extension.h>
 #include <math.h>

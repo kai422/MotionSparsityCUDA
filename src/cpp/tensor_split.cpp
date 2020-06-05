@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-03 19:13:32
+ * @ Modified time: 2020-06-05 21:29:44
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -16,9 +16,8 @@
 namespace ms
 {
 
-    //template <typename Dtype>
-    void DenseSplitForwardCPU(at::Tensor &input_r, at::Tensor &out_l1_r,
-                              at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, ptr_wrapper<quadtree *> structures)
+    void DenseSplitForwardCPU(torch::Tensor input_r, torch::Tensor out_l1_r,
+                              torch::Tensor out_l2_r, torch::Tensor out_l3_r, torch::Tensor out_l4_r, ptr_wrapper<quadtree *> structures)
     {
         //please make sure out_l_r are zero tensor.
         auto &input = input_r;
@@ -148,7 +147,7 @@ namespace ms
         }
     }
 
-    void get_padded_tensor(at::Tensor &input_tensor, at::Tensor &ref)
+    void get_padded_tensor(torch::Tensor &input_tensor, torch::Tensor &ref)
     {
         //if the position in the input != 0;
         //then check its neighbor
@@ -237,8 +236,8 @@ namespace ms
         }
     }
 
-    void DenseSplitBackwardCPU(at::Tensor &grad_in_r, at::Tensor &grad_out_l1_r,
-                               at::Tensor &grad_out_l2_r, at::Tensor &grad_out_l3_r, at::Tensor &grad_out_l4_r, ptr_wrapper<quadtree *> structures)
+    void DenseSplitBackwardCPU(torch::Tensor &grad_in_r, torch::Tensor &grad_out_l1_r,
+                               torch::Tensor &grad_out_l2_r, torch::Tensor &grad_out_l3_r, torch::Tensor &grad_out_l4_r, ptr_wrapper<quadtree *> structures)
     {
         auto grad_out_l1 = grad_out_l1_r;
         auto grad_out_l2 = grad_out_l2_r;
