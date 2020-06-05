@@ -14,4 +14,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
     m.def("DenseCombineForwardCPU", &ms::DenseCombineForwardCPU);
     m.def("DenseCombineBackwardCPU", &ms::DenseCombineBackwardCPU);
     m.def("quadtree_pool2x2_stru_batch", &ms::quadtree_pool2x2_stru_batch);
+    m.def("SaveQuadStruAsImg", &ms::SaveQuadStruAsImg);
 }

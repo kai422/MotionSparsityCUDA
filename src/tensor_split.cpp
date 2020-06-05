@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 22:50:29
+ * @ Modified time: 2020-06-03 19:13:32
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -21,11 +21,11 @@ namespace ms
                               at::Tensor &out_l2_r, at::Tensor &out_l3_r, at::Tensor &out_l4_r, ptr_wrapper<quadtree *> structures)
     {
         //please make sure out_l_r are zero tensor.
-        auto input = input_r;
-        auto out_l1 = out_l1_r;
-        auto out_l2 = out_l2_r;
-        auto out_l3 = out_l3_r;
-        auto out_l4 = out_l4_r;
+        auto &input = input_r;
+        auto &out_l1 = out_l1_r;
+        auto &out_l2 = out_l2_r;
+        auto &out_l3 = out_l3_r;
+        auto &out_l4 = out_l4_r;
 
         auto dim = input.ndimension();
 

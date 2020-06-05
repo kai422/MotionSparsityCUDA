@@ -21,6 +21,8 @@ namespace ms
                                  at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures);
 
     void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
+
+    void SaveQuadStruAsImg(ptr_wrapper<quadtree *> structures, at::Tensor quadstrus_img);
 } // namespace ms
 
 #endif
