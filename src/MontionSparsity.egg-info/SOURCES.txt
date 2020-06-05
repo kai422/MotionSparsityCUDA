@@ -1,6 +1,0 @@
-pybind.cpp
-setup.py
-MontionSparsity.egg-info/PKG-INFO
-MontionSparsity.egg-info/SOURCES.txt
-MontionSparsity.egg-info/dependency_links.txt
-MontionSparsity.egg-info/top_level.txt
