@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-06-03 17:57:36
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-05 22:40:48
+ * @ Modified time: 2020-06-06 11:41:07
  * @ Description:
  */
 
@@ -27,14 +27,14 @@ namespace ms
         {
             auto stru_t = structures[t];
             auto img_t = img[t];
-
             auto dst = img_t.accessor<float, 3>();
 
-            float scale_factor = (float)h / stru_t->grid_height;
+            float scale_factor = (float)h / (stru_t->grid_height * 8);
 
             int n_blocks = stru_t->num_blocks();
             int grid_width = stru_t->grid_width;
             int feature_size = stru_t->feature_size;
+
             for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
             {
                 bitset<21UL> &grid_tree = stru_t->trees[grid_idx];
@@ -98,11 +98,6 @@ namespace ms
     }
     inline void assign_pixel_to_tensor(const int &level, torch::TensorAccessor<float, 3, torch::DefaultPtrTraits> img, const float &scale_factor, const int &tensor_h, const int &tensor_w, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
-        // h w f
-        // f h w
-        //data_ptr accessor: h_index*(w*f) + w_index*f + f_index
-        //do pooling into one leaf
-
         int h1_tensor = int(h1 * scale_factor);
         int h2_tensor = int(h2 * scale_factor);
         int w1_tensor = int(w1 * scale_factor);
@@ -135,12 +130,13 @@ namespace ms
         default:
             break;
         }
+
         for (int h = h1_tensor; h < h2_tensor; ++h)
         {
             for (int w = w1_tensor; w < w2_tensor; ++w)
             {
-                img[h][w][0] = g;
-                img[h][w][1] = b;
+                img[h][w][0] = b;
+                img[h][w][1] = g;
                 img[h][w][2] = r;
             }
         }
