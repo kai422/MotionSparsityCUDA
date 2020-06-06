@@ -18,11 +18,11 @@
 namespace ms
 {
 
-    void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r, at::Tensor &in_l3_r, at::Tensor &in_l4_r, at::Tensor &output_r, ptr_wrapper<quadtree *> structures);
+    void DenseCombineForwardCPU(torch::Tensor in_l1, torch::Tensor in_l2, torch::Tensor in_l3, torch::Tensor in_l4, torch::Tensor output, ptr_wrapper<quadtree *> structures);
 
-    quadtree *CombineDenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *stru, float *in_l1_src, float *in_l2_src, float *in_l3_src, float *in_l4_src);
+    quadtree *CombineDenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *stru, torch::Tensor in_l1_src, torch::Tensor in_l2_src, torch::Tensor in_l3_src, torch::Tensor in_l4_src);
 
-    void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r, at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r, at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures);
+    void DenseCombineBackwardCPU(torch::Tensor grad_in_l1, torch::Tensor grad_in_l2, torch::Tensor grad_in_l3, torch::Tensor grad_in_l4, torch::Tensor grad_out, ptr_wrapper<quadtree *> structures);
 
 } // namespace ms
 

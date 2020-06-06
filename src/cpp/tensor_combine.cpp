@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 22:53:09
+ * @ Modified time: 2020-06-07 01:00:41
  * @ Description: combine sparse tensors with hierarchy of different depths.
  */
 
@@ -24,14 +24,8 @@ namespace ms
 
     //out Tensor out
     //template <typename Dtype>
-    void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r, at::Tensor &in_l3_r, at::Tensor &in_l4_r, at::Tensor &output_r, ptr_wrapper<quadtree *> structures)
+    void DenseCombineForwardCPU(torch::Tensor in_l1, torch::Tensor in_l2, torch::Tensor in_l3, torch::Tensor in_l4, torch::Tensor output, ptr_wrapper<quadtree *> structures)
     {
-        auto in_l1 = in_l1_r;
-        auto in_l2 = in_l2_r;
-        auto in_l3 = in_l3_r;
-        auto in_l4 = in_l4_r;
-        auto output = output_r;
-
         auto dim = output.ndimension();
 
         TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
@@ -39,12 +33,6 @@ namespace ms
         TORCH_CHECK(output.sizes() == in_l2.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
         TORCH_CHECK(output.sizes() == in_l3.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
         TORCH_CHECK(output.sizes() == in_l4.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
-
-        in_l1 = in_l1.contiguous();
-        in_l2 = in_l2.contiguous();
-        in_l3 = in_l3.contiguous();
-        in_l4 = in_l4.contiguous();
-        output = output.contiguous();
 
         auto T = output.size(0);
         auto f = output.size(1);
@@ -62,16 +50,15 @@ namespace ms
             auto output_t = output[t];
 
             //combine from three dense tensor to one gridtree
-            quadtree *output_quad;
-            output_quad = CombineDenseToQuad(f, h, w, stru_t, in_l1_t.data_ptr<float>(), in_l2_t.data_ptr<float>(), in_l3_t.data_ptr<float>(), in_l4_t.data_ptr<float>());
+            CombineDenseToQuad(f, h, w, stru_t, in_l1_t, in_l2_t, in_l3_t, in_l4_t);
 
-            QuadToDense(output_quad, f, h, w, output_t.data_ptr<float>());
+            QuadToDense(stru_t, f, h, w, output_t);
 
             //convert gridtree to dense tensor
         }
     }
 
-    quadtree *CombineDenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *stru, float *in_l1_src, float *in_l2_src, float *in_l3_src, float *in_l4_src)
+    quadtree *CombineDenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, quadtree *stru, torch::Tensor in_l1_src, torch::Tensor in_l2_src, torch::Tensor in_l3_src, torch::Tensor in_l4_src)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         // tensor_size tensor_h x tensor_w (256x256)
@@ -82,7 +69,11 @@ namespace ms
                "expect input structure has same size with data tensor.");
         float scale_factor = (float)tensor_h / stru->grid_height;
 
-        quadtree *output = new quadtree(*stru);
+        quadtree *output = stru;
+        if (output->data != nullptr)
+        {
+            delete[] output->data;
+        }
         output->data = new qt_data_t[output->n_leafs * output->feature_size]{};
 
         int n_blocks = output->num_blocks();
@@ -127,14 +118,14 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                get_data_from_tensor(grid_data + data_idx, in_l4_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                get_data_from_tensor(grid_data + data_idx, in_l4_src, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }
                                     else
                                     {
                                         int data_idx = tree_data_idx(grid_tree, bit_idx_l2, feature_size);
-                                        get_data_from_tensor(grid_data + data_idx, in_l3_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                        get_data_from_tensor(grid_data + data_idx, in_l3_src, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                     }
                                 }
                             }
@@ -142,7 +133,7 @@ namespace ms
                         else
                         {
                             int data_idx = tree_data_idx(grid_tree, bit_idx_l1, feature_size);
-                            get_data_from_tensor(grid_data + data_idx, in_l2_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                            get_data_from_tensor(grid_data + data_idx, in_l2_src, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                         }
                     }
                 }
@@ -150,34 +141,22 @@ namespace ms
             else
             {
                 //if not set, average the content
-                get_data_from_tensor(grid_data, in_l1_src, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                get_data_from_tensor(grid_data, in_l1_src, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
         }
 
         return output;
     }
 
-    void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r, at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r, at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures)
+    void DenseCombineBackwardCPU(torch::Tensor grad_in_l1, torch::Tensor grad_in_l2, torch::Tensor grad_in_l3, torch::Tensor grad_in_l4, torch::Tensor grad_out, ptr_wrapper<quadtree *> structures)
     {
-        auto grad_in_l1 = grad_in_l1_r;
-        auto grad_in_l2 = grad_in_l2_r;
-        auto grad_in_l3 = grad_in_l3_r;
-        auto grad_in_l4 = grad_in_l4_r;
-        auto grad_out = grad_out_r;
-
-        auto dim = grad_out_r.ndimension();
+        auto dim = grad_out.ndimension();
 
         TORCH_CHECK(dim == 4, "MotionSparsityError: expected 3D tensor, but got tensor with ", dim, " dimensions instead");
         TORCH_CHECK(grad_out.sizes() == grad_in_l1.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
         TORCH_CHECK(grad_out.sizes() == grad_in_l2.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
         TORCH_CHECK(grad_out.sizes() == grad_in_l3.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
         TORCH_CHECK(grad_out.sizes() == grad_in_l4.sizes(), "MotionSparsityError: expected dst and src tensors have the same shape");
-
-        grad_in_l1 = grad_in_l1.contiguous();
-        grad_in_l2 = grad_in_l2.contiguous();
-        grad_in_l3 = grad_in_l3.contiguous();
-        grad_in_l4 = grad_in_l4.contiguous();
-        grad_out = grad_out.contiguous();
 
         auto T = grad_out.size(0);
         auto f = grad_out.size(1);
@@ -194,12 +173,6 @@ namespace ms
             auto grad_in_l4_t = grad_in_l4[t];
             auto grad_out_t = grad_out[t];
 
-            auto grad_in_l1_dst = grad_in_l1_t.data_ptr<float>();
-            auto grad_in_l2_dst = grad_in_l2_t.data_ptr<float>();
-            auto grad_in_l3_dst = grad_in_l3_t.data_ptr<float>();
-            auto grad_in_l4_dst = grad_in_l4_t.data_ptr<float>();
-            auto grad_out_src = grad_out_t.data_ptr<float>();
-
             // data_ptr accessor: f_index*(h*w) + h_index*w + w_index
             // tensor_size tensor_h x tensor_w (256x256)
             // grid size 64x64
@@ -208,6 +181,7 @@ namespace ms
             assert(f == stru_t->feature_size && ((float)h / stru_t->grid_height) == ((float)stru_t->grid_width / w) &&
                    "expect input structure has same size with data tensor.");
             _unused(f);
+            _unused(w);
             float scale_factor = (float)h / stru_t->grid_height;
 
             int n_blocks = stru_t->num_blocks();
@@ -249,20 +223,20 @@ namespace ms
                                                 {
                                                     float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                     float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
-                                                    assign_data_among_tensor(grad_in_l4_dst, grad_out_src, scale_factor, h, w, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                    assign_data_among_tensor(grad_in_l4, grad_out, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                                 }
                                             }
                                         }
                                         else
                                         {
-                                            assign_data_among_tensor(grad_in_l3_dst, grad_out_src, scale_factor, h, w, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                            assign_data_among_tensor(grad_in_l3, grad_out, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                         }
                                     }
                                 }
                             }
                             else
                             {
-                                assign_data_among_tensor(grad_in_l2_dst, grad_out_src, scale_factor, h, w, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                                assign_data_among_tensor(grad_in_l2, grad_out, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                             }
                         }
                     }
@@ -270,7 +244,7 @@ namespace ms
                 else
                 {
                     //if not set, average the content
-                    assign_data_among_tensor(grad_in_l1_dst, grad_out_src, scale_factor, h, w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                    assign_data_among_tensor(grad_in_l1, grad_out, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
                 }
             }
         }

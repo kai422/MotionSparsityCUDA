@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:11:08
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-02 19:53:09
+ * @ Modified time: 2020-06-06 17:21:04
  * @ Description:
  */
 
@@ -37,22 +37,16 @@
 
 namespace ms
 {
-    void grid_free()
-    {
-    }
 
-    ptr_wrapper<quadtree *> quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
+    void quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
     {
         for (int i = 0; i < n; ++i)
         {
-            quadtree *poolled = quadtree_pool2x2_stru(structures[i]);
-            delete structures[i];
-            //TODO: need some test to see if this arrangement will give right dtor call.
-            structures[i] = poolled;
+            quadtree_pool2x2_stru(structures[i]);
         }
     }
 
-    quadtree *quadtree_pool2x2_stru(quadtree *in)
+    void quadtree_pool2x2_stru(quadtree *in)
     {
         if (in->grid_height % 2 != 0 || in->grid_width % 2 != 0)
         {
@@ -64,7 +58,7 @@ namespace ms
             printf("[ERROR] quadtree_gridpool2x2_cpu grid dimension have to be at least 2x2\n");
             exit(-1);
         }
-        quadtree *out = new quadtree(in->grid_height / 2, in->grid_height / 2, in->feature_size);
+        quadtree *out = in;
 
         int n_blocks = out->num_blocks();
         //#pragma omp parallel for
@@ -120,20 +114,19 @@ namespace ms
             }
         }
         //quadtree_pool2x2_data_avg(in, out);
-        return out;
     }
 
-    inline void quadtree_pool2x2_data_avg(const qt_data_t *data_in, qt_size_t feature_size, qt_data_t *data_out)
-    {
-        for (int f = 0; f < feature_size; ++f)
-        {
-            qt_data_t avg = 0;
-            for (int idx = 0; idx < 4; ++idx)
-            {
-                avg += data_in[idx * feature_size + f];
-            }
-            avg /= 4.f;
-            data_out[f] = avg;
-        }
-    }
+    // inline void quadtree_pool2x2_data_avg(const qt_data_t *data_in, qt_size_t feature_size, qt_data_t *data_out)
+    // {
+    //     for (int f = 0; f < feature_size; ++f)
+    //     {
+    //         qt_data_t avg = 0;
+    //         for (int idx = 0; idx < 4; ++idx)
+    //         {
+    //             avg += data_in[idx * feature_size + f];
+    //         }
+    //         avg /= 4.f;
+    //         data_out[f] = avg;
+    //     }
+    // }
 } // namespace ms

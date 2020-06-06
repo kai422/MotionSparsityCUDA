@@ -10,14 +10,14 @@ class BuildExt(cpp_extension.BuildExtension):
 
 
 setup(name="MotionSparsity",
-      version="0.0.1",
+      version="0.0.0",
       ext_modules=[
           cpp_extension.CppExtension(name="MSBackend",
                                      sources=[
-                                         'data_create.cpp', 
-                                         #'tensor_split.cpp', 
-                                         #'tensor_combine.cpp',
-                                         #'grid_pool.cpp',
+                                         'data_create.cpp',
+                                         'tensor_split.cpp',
+                                         'tensor_combine.cpp',
+                                         'grid_pool.cpp',
                                          'save_img.cpp', 'pybind.cpp'
                                      ])
       ],

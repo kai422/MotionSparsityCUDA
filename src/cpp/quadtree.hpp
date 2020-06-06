@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-01 20:19:41
+ * @ Modified time: 2020-06-06 17:25:04
  * @ Description:
  */
 #ifndef QUADTREE
@@ -27,13 +27,13 @@ namespace ms
     {
     public:
         quadtree() : grid_height(0), grid_width(0),
-                     feature_size(0), n_leafs(0),
+                     feature_size(0), n_leafs(0), data(nullptr),
                      grid_capacity(0){};
 
         quadtree(qt_size_t _grid_height = 0, qt_size_t _grid_width = 0,
                  qt_size_t _feature_size = 0)
             : grid_height(_grid_height), grid_width(_grid_width),
-              feature_size(_feature_size), n_leafs(0),
+              feature_size(_feature_size), n_leafs(0), data(nullptr),
               grid_capacity(_grid_height * _grid_width)
         {
             trees = new qt_tree_t[grid_capacity]{};
@@ -43,7 +43,7 @@ namespace ms
         quadtree(const quadtree &in)
             : grid_height(in.grid_height), grid_width(in.grid_width),
               feature_size(in.feature_size), n_leafs(in.n_leafs),
-              trees(in.trees), prefix_leafs(in.prefix_leafs),
+              trees(in.trees), prefix_leafs(in.prefix_leafs), data(in.data),
               grid_capacity(in.grid_capacity){};
 
         qt_size_t num_blocks() const;

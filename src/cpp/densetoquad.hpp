@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-05 20:51:26
+ * @ Modified time: 2020-06-06 22:51:29
  * @ Description:
  */
 
@@ -36,11 +36,11 @@
 
 #include "quadtree.hpp"
 #include "tensor_common.hpp"
+#include <torch/extension.h>
 
 namespace ms
 {
-    // template <typename Dtype>
-    quadtree *DenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, float *data_ptr, const quadtree *stru)
+    void DenseToQuad(const int &f, const int &tensor_h, const int &tensor_w, const torch::Tensor data, quadtree *stru)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         // tensor_size tensor_h x tensor_w (256x256)
@@ -51,7 +51,16 @@ namespace ms
                "expect input structure has same size with data tensor.");
         float scale_factor = (float)tensor_h / stru->grid_height;
 
-        quadtree *output = new quadtree(*stru);
+        /*******************breakpoint******************/
+        std::cout << scale_factor << std::endl;
+        TORCH_CHECK(1 == 0, "MotionSparsityError: breakpoint");
+        /*******************breakpoint******************/
+
+        quadtree *output = stru;
+        if (output->data != nullptr)
+        {
+            delete[] output->data;
+        }
         output->data = new qt_data_t[output->n_leafs * output->feature_size]{};
 
         int n_blocks = output->num_blocks();
@@ -96,14 +105,14 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                get_data_from_tensor(grid_data + data_idx, data, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }
                                     else
                                     {
                                         int data_idx = tree_data_idx(grid_tree, bit_idx_l2, feature_size);
-                                        get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                        get_data_from_tensor(grid_data + data_idx, data, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                     }
                                 }
                             }
@@ -111,7 +120,7 @@ namespace ms
                         else
                         {
                             int data_idx = tree_data_idx(grid_tree, bit_idx_l1, feature_size);
-                            get_data_from_tensor(grid_data + data_idx, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                            get_data_from_tensor(grid_data + data_idx, data, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                         }
                     }
                 }
@@ -119,11 +128,9 @@ namespace ms
             else
             {
                 //if not set, average the content
-                get_data_from_tensor(grid_data, data_ptr, scale_factor, tensor_h, tensor_w, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                get_data_from_tensor(grid_data, data, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
         }
-
-        return output;
     }
 
 } // namespace ms

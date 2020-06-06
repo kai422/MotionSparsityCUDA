@@ -1,3 +1,11 @@
+/**
+ * @ Author: Kai Xu
+ * @ Create Time: 2020-06-01 20:50:57
+ * @ Modified by: Kai Xu
+ * @ Modified time: 2020-06-07 00:42:05
+ * @ Description:
+ */
+
 #ifndef EXTERN
 #define EXTERN
 
@@ -8,17 +16,18 @@ namespace ms
 {
     ptr_wrapper<quadtree *> CreateFromDense(torch::Tensor input);
 
-    void DenseSplitForwardCPU(torch::Tensor input_r, torch::Tensor out_l1_r,
-                              torch::Tensor out_l2_r, torch::Tensor out_l3_r,
-                              torch::Tensor out_l4_r, ptr_wrapper<quadtree *> structures);
-    void DenseSplitBackwardCPU(torch::Tensor grad_in_r, torch::Tensor grad_out_l1_r,
-                               torch::Tensor grad_out_l2_r, torch::Tensor grad_out_l3_r, torch::Tensor grad_out_l4_r, ptr_wrapper<quadtree *> structures);
-    void DenseCombineForwardCPU(torch::Tensor &in_l1_r, torch::Tensor &in_l2_r,
-                                torch::Tensor &in_l3_r, torch::Tensor &in_l4_r,
-                                torch::Tensor &output_r, ptr_wrapper<quadtree *> structures);
-    void DenseCombineBackwardCPU(torch::Tensor &grad_in_l1_r, torch::Tensor &grad_in_l2_r,
-                                 torch::Tensor &grad_in_l3_r, torch::Tensor &grad_in_l4_r,
-                                 torch::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures);
+    void DenseSplitForwardCPU(torch::Tensor input, torch::Tensor out_l1,
+                              torch::Tensor out_l2, torch::Tensor out_l3, torch::Tensor out_l4, ptr_wrapper<quadtree *> structures);
+
+    void DenseSplitBackwardCPU(torch::Tensor grad_in, torch::Tensor grad_out_l1,
+                               torch::Tensor grad_out_l2, torch::Tensor grad_out_l3, torch::Tensor grad_out_l4, ptr_wrapper<quadtree *> structures);
+
+    void DenseCombineForwardCPU(torch::Tensor in_l1, torch::Tensor in_l2,
+                                torch::Tensor in_l3, torch::Tensor in_l4,
+                                torch::Tensor output, ptr_wrapper<quadtree *> structures);
+    void DenseCombineBackwardCPU(torch::Tensor grad_in_l1, torch::Tensor grad_in_l2,
+                                 torch::Tensor grad_in_l3, torch::Tensor grad_in_l4,
+                                 torch::Tensor grad_out, ptr_wrapper<quadtree *> structures);
 
     void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
 
