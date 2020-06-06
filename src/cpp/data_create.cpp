@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-05 22:18:45
+ * @ Modified time: 2020-06-06 13:26:04
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  *                based on octnet.
@@ -35,17 +35,17 @@ namespace ms
         int64_t end = T;
         for (auto t = start; t < end; t++)
         {
+
             auto input_t = input[t];
-            auto data = input_t.accessor<float, 3>();
             quadtree **ptr_stru_t = ptr_strus + t;
-            create_quadtree_structure(grid_h, grid_w, f, data, h, w, ptr_stru_t);
+            create_quadtree_structure(grid_h, grid_w, f, input_t, h, w, ptr_stru_t);
             //convert gridtree to dense tensor
         }
 
         return ptr_strus;
     }
 
-    void create_quadtree_structure(const int &grid_h, const int &grid_w, const int &f, const torch::TensorAccessor<float, 3, torch::DefaultPtrTraits> data, const int &tensor_h, const int &tensor_w, quadtree **ptr_stru_t)
+    void create_quadtree_structure(const int &grid_h, const int &grid_w, const int &f, const torch::Tensor data, const int &tensor_h, const int &tensor_w, quadtree **ptr_stru_t)
     {
         quadtree *grid = new quadtree(grid_h, grid_w, f);
         *ptr_stru_t = grid;
@@ -109,7 +109,7 @@ namespace ms
         }
     }
 
-    bool isHomogeneous(const torch::TensorAccessor<float, 3, torch::DefaultPtrTraits> data, const float &centre_x, const float &centre_y, const float &size, const float &scale_factor)
+    bool isHomogeneous(const torch::Tensor data, const float &centre_x, const float &centre_y, const float &size, const float &scale_factor)
     {
         //is the value inside this grid is all the same.
         //check if the colors of four corner is the same. if it's the same then no need to exploit this grid as a subtree. set it as leaf, return true.
@@ -133,11 +133,22 @@ namespace ms
             \                                               \
             x_end,y_start  ---------------------- x_end, y_end
         */
-        bool isHomo_ch1 = (data[0][x_start][y_start] == data[0][x_start][y_end]) && (data[0][x_end][y_start] == data[0][x_end][y_end]) && (data[0][x_start][y_start] == data[0][x_end][y_start]);
 
-        bool isHomo_ch2 = (data[1][x_start][y_start] == data[1][x_start][y_end]) && (data[1][x_end][y_start] == data[1][x_end][y_end]) && (data[1][x_start][y_start] == data[1][x_end][y_start]);
+        auto ss0 = data[0][x_start][y_start].cpu().data_ptr<float>()[0];
+        auto se0 = data[0][x_start][y_end].cpu().data_ptr<float>()[0];
+        auto es0 = data[0][x_end][y_start].cpu().data_ptr<float>()[0];
+        auto ee0 = data[0][x_end][y_end].cpu().data_ptr<float>()[0];
 
-        return isHomo_ch1 & isHomo_ch2;
+        bool isHomo_ch1 = (ss0 == se0) && (es0 == ee0) && (ss0 == es0);
+
+        auto ss1 = data[1][x_start][y_start].cpu().data_ptr<float>()[0];
+        auto se1 = data[1][x_start][y_end].cpu().data_ptr<float>()[0];
+        auto es1 = data[1][x_end][y_start].cpu().data_ptr<float>()[0];
+        auto ee1 = data[1][x_end][y_end].cpu().data_ptr<float>()[0];
+
+        bool isHomo_ch2 = (ss1 == se1) && (es1 == ee1) && (ss1 == es1);
+
+        return isHomo_ch1 && isHomo_ch2;
     }
 
 } // namespace ms
