@@ -18,7 +18,8 @@ setup(name="MotionSparsity",
                                          'tensor_split.cpp',
                                          'tensor_combine.cpp',
                                          'grid_pool.cpp',
-                                         'save_img.cpp', 'pybind.cpp'
+                                         'save_img.cpp', 'pybind.cpp',
+                                         'densetoquad.cpp', 'quadtodense.cpp'
                                      ])
       ],
       cmdclass={'build_ext': BuildExt})
