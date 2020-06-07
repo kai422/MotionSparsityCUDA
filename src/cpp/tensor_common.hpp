@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 12:18:41
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 00:59:24
+ * @ Modified time: 2020-06-07 20:21:38
  * @ Description:
  */
 
@@ -10,9 +10,181 @@
 #define TENSORCOMMON
 
 #include <torch/extension.h>
+
 #include "quadtree.hpp"
 namespace ms
 {
+    inline void save_data_to_tensor_with_border_coords(qt_data_t *src_data, torch::Tensor dst_tensor, const float &scale_factor, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2, std::vector<std::tuple<int, int>> &border_coords)
+    {
+        //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
+        //do pooling into one leaf
+
+        int h1_tensor = int(h1 * scale_factor);
+        int h2_tensor = int(h2 * scale_factor);
+        int w1_tensor = int(w1 * scale_factor);
+        int w2_tensor = int(w2 * scale_factor);
+        int h_size = dst_tensor.size(1);
+        int w_size = dst_tensor.size(2);
+
+        for (int h = h1_tensor; h < h2_tensor; ++h)
+        {
+            for (int w = w1_tensor; w < w2_tensor; ++w)
+            {
+                for (int f = 0; f < feature_size; ++f)
+                {
+                    dst_tensor[f][h][w] = src_data[f];
+                }
+            }
+        }
+
+        if (0 < h1_tensor && h2_tensor < h_size)
+        {
+            if (0 < w1_tensor && w2_tensor < w_size)
+            {
+                for (int h = h1_tensor - 1; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else if (w1_tensor == 0)
+            {
+                for (int h = h1_tensor - 1; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else if (w2_tensor == w_size)
+            {
+                for (int h = h1_tensor - 1; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else
+            {
+                std::cout << "h1: " << h1_tensor << std::endl;
+                std::cout << "h2: " << h2_tensor << std::endl;
+                std::cout << "w1: " << w1_tensor << std::endl;
+                std::cout << "w2: " << w2_tensor << std::endl;
+                TORCH_CHECK(false, "MotionSparsityError: error inside save_data_to_tensor_with_border_coords");
+            }
+        }
+        else if (h1_tensor == 0)
+        {
+            if (0 < w1_tensor && w2_tensor < w_size)
+            {
+                for (int h = h1_tensor; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else if (w1_tensor == 0)
+            {
+                for (int h = h1_tensor; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else if (w2_tensor == w_size)
+            {
+                for (int h = h1_tensor; h <= h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h2_tensor, w});
+                }
+            }
+            else
+            {
+                std::cout << "h1: " << h1_tensor << std::endl;
+                std::cout << "h2: " << h2_tensor << std::endl;
+                std::cout << "w1: " << w1_tensor << std::endl;
+                std::cout << "w2: " << w2_tensor << std::endl;
+                TORCH_CHECK(false, "MotionSparsityError: error inside save_data_to_tensor_with_border_coords");
+            }
+        }
+        else if (h2_tensor == h_size)
+        {
+            if (0 < w1_tensor && w2_tensor < w_size)
+            {
+                for (int h = h1_tensor - 1; h < h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                }
+            }
+            else if (w1_tensor == 0)
+            {
+                for (int h = h1_tensor - 1; h < h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w2_tensor});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                }
+            }
+            else if (w2_tensor == w_size)
+            {
+                for (int h = h1_tensor - 1; h < h2_tensor; ++h)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h, w1_tensor - 1});
+                }
+                for (int w = w1_tensor; w < w2_tensor; ++w)
+                {
+                    border_coords.push_back(std::tuple<int, int>{h1_tensor - 1, w});
+                }
+            }
+            else
+            {
+                std::cout << "h1: " << h1_tensor << std::endl;
+                std::cout << "h2: " << h2_tensor << std::endl;
+                std::cout << "w1: " << w1_tensor << std::endl;
+                std::cout << "w2: " << w2_tensor << std::endl;
+                TORCH_CHECK(false, "MotionSparsityError: error inside save_data_to_tensor_with_border_coords");
+            }
+        }
+        else
+        {
+            std::cout << "h1: " << h1_tensor << std::endl;
+            std::cout << "h2: " << h2_tensor << std::endl;
+            std::cout << "w1: " << w1_tensor << std::endl;
+            std::cout << "w2: " << w2_tensor << std::endl;
+            TORCH_CHECK(false, "MotionSparsityError: error inside save_data_to_tensor_with_border_coords");
+        }
+    }
+
     inline void save_data_to_tensor(qt_data_t *src_data, torch::Tensor dst_tensor, const float &scale_factor, int &feature_size, const float &h1, const float &h2, const float &w1, const float &w2)
     {
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
@@ -88,6 +260,7 @@ namespace ms
             for (int w = w1_tensor; w < w2_tensor; ++w)
             {
                 for (int f = 0; f < feature_size; ++f)
+
                 {
                     dst_tensor[f][h][w] = src_tensor[f][h][w];
                 }

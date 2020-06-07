@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-06-01 20:50:57
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 00:42:05
+ * @ Modified time: 2020-06-07 22:44:41
  * @ Description:
  */
 
@@ -30,6 +30,8 @@ namespace ms
                                  torch::Tensor grad_out, ptr_wrapper<quadtree *> structures);
 
     void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
+
+    void quadtree_resize_fsize_batch(ptr_wrapper<quadtree *> structures, const int n, const int feature_size);
 
     void SaveQuadStruAsImg(ptr_wrapper<quadtree *> structures, torch::Tensor quadstrus_img);
 } // namespace ms

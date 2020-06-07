@@ -1,3 +1,11 @@
+/**
+ * @ Author: Kai Xu
+ * @ Create Time: 2020-06-01 20:50:57
+ * @ Modified by: Kai Xu
+ * @ Modified time: 2020-06-07 23:24:00
+ * @ Description:
+ */
+
 #include <torch/torch.h>
 #include <torch/extension.h>
 
@@ -14,5 +22,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
     m.def("DenseCombineForwardCPU", &ms::DenseCombineForwardCPU);
     m.def("DenseCombineBackwardCPU", &ms::DenseCombineBackwardCPU);
     m.def("quadtree_pool2x2_stru_batch", &ms::quadtree_pool2x2_stru_batch);
+    m.def("quadtree_resize_fsize_batch", &ms::quadtree_resize_fsize_batch);
     m.def("SaveQuadStruAsImg", &ms::SaveQuadStruAsImg);
 }

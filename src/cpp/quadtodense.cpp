@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 11:40:38
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 01:12:04
+ * @ Modified time: 2020-06-07 20:09:51
  * @ Description:
  */
 
@@ -48,7 +48,7 @@ namespace ms
 
         assert(f == feature_size && ((float)tensor_h / input_quad->grid_height) == ((float)input_quad->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
-        float scale_factor = (float)tensor_h / grid_height;
+        float scale_factor = (float)tensor_h / (grid_height * 8);
         //#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
@@ -88,7 +88,7 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                get_data_from_tensor(grid_data + data_idx, out_data_dst, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                save_data_to_tensor(grid_data + data_idx, out_data_dst, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }

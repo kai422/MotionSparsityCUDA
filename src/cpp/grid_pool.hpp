@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-06-01 21:14:31
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-06 17:21:16
+ * @ Modified time: 2020-06-07 21:41:25
  * @ Description:
  */
 
@@ -14,7 +14,7 @@
 namespace ms
 {
 
-    void quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n);
+    void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
 
     void quadtree_pool2x2_stru(quadtree *in);
 

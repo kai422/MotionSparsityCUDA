@@ -2,9 +2,18 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 00:24:26
+ * @ Modified time: 2020-06-07 19:05:58
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
+
+// /*******************breakpoint******************/
+// for (int i = 0; i < stru_t->n_leafs; ++i)
+// {
+//     std::cout << stru_t->data[i] << ' ';
+// }
+
+// TORCH_CHECK(1 == 0, "MotionSparsityError: breakpoint0");
+/*******************breakpoint******************/
 
 #include <torch/extension.h>
 #include "quadtree.hpp"
@@ -48,16 +57,23 @@ namespace ms
             DenseToQuad(f, h, w, input_t, stru_t);
 
             //split to three tensor with padding
-            splitQuadToDense(f, h, w, stru_t, out_l1_t, out_l2_t, out_l3_t, out_l4_t);
+            std::vector<std::tuple<int, int>> border_coords_l1;
+            std::vector<std::tuple<int, int>> border_coords_l2;
+            std::vector<std::tuple<int, int>> border_coords_l3;
+            std::vector<std::tuple<int, int>> border_coords_l4;
 
-            get_padded_tensor(out_l1_t, input_t);
-            get_padded_tensor(out_l2_t, input_t);
-            get_padded_tensor(out_l3_t, input_t);
-            get_padded_tensor(out_l4_t, input_t);
+            splitQuadToDense(f, h, w, stru_t, out_l1_t, out_l2_t, out_l3_t, out_l4_t, border_coords_l1, border_coords_l2, border_coords_l3, border_coords_l4);
+
+            get_padded_tensor(out_l1_t, input_t, border_coords_l1);
+            get_padded_tensor(out_l2_t, input_t, border_coords_l2);
+            get_padded_tensor(out_l3_t, input_t, border_coords_l3);
+            get_padded_tensor(out_l4_t, input_t, border_coords_l4);
         }
+        //too slow
+        //try parallel
     }
 
-    void splitQuadToDense(const int &f, const int &tensor_h, const int &tensor_w, quadtree *input_quad, torch::Tensor out_l1_dst, torch::Tensor out_l2_dst, torch::Tensor out_l3_dst, torch::Tensor out_l4_dst)
+    void splitQuadToDense(const int &f, const int &tensor_h, const int &tensor_w, quadtree *input_quad, torch::Tensor out_l1_dst, torch::Tensor out_l2_dst, torch::Tensor out_l3_dst, torch::Tensor out_l4_dst, std::vector<std::tuple<int, int>> &border_coords_l1, std::vector<std::tuple<int, int>> &border_coords_l2, std::vector<std::tuple<int, int>> &border_coords_l3, std::vector<std::tuple<int, int>> &border_coords_l4)
     {
         int n_blocks = input_quad->num_blocks();
         int grid_height = input_quad->grid_height;
@@ -66,7 +82,7 @@ namespace ms
 
         assert(f == feature_size && ((float)tensor_h / input_quad->grid_height) == ((float)input_quad->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
-        float scale_factor = (float)tensor_h / grid_height;
+        float scale_factor = (float)tensor_h / (grid_height * 8);
         //#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
@@ -106,14 +122,14 @@ namespace ms
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
                                                 int data_idx = tree_data_idx(grid_tree, bit_idx_l3, feature_size);
-                                                save_data_to_tensor(grid_data + data_idx, out_l4_dst, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                save_data_to_tensor_with_border_coords(grid_data + data_idx, out_l4_dst, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5, border_coords_l4);
                                             }
                                         }
                                     }
                                     else
                                     {
                                         int data_idx = tree_data_idx(grid_tree, bit_idx_l2, feature_size);
-                                        save_data_to_tensor(grid_data + data_idx, out_l3_dst, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                        save_data_to_tensor_with_border_coords(grid_data + data_idx, out_l3_dst, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1, border_coords_l3);
                                     }
                                 }
                             }
@@ -121,7 +137,7 @@ namespace ms
                         else
                         {
                             int data_idx = tree_data_idx(grid_tree, bit_idx_l1, feature_size);
-                            save_data_to_tensor(grid_data + data_idx, out_l2_dst, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                            save_data_to_tensor_with_border_coords(grid_data + data_idx, out_l2_dst, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2, border_coords_l2);
                         }
                     }
                 }
@@ -129,94 +145,28 @@ namespace ms
             else
             {
                 //ouput whole grid(cx-4,cx+4,cy-4,cy+4) to out_l1_dst tensor
-                save_data_to_tensor(grid_data, out_l1_dst, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+
+                save_data_to_tensor_with_border_coords(grid_data, out_l1_dst, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4, border_coords_l1);
             }
         }
     }
 
-    void get_padded_tensor(torch::Tensor input_tensor, torch::Tensor ref)
+    void get_padded_tensor(torch::Tensor input_tensor, torch::Tensor ref, std::vector<std::tuple<int, int>> &border_coords)
     {
         //if the position in the input != 0;
         //then check its neighbor
         //it == 0
         //then pad it (i.e. get the value from the ref tensor)
-        int nf = input_tensor.size(0);
-        int nx = input_tensor.size(1);
-        int ny = input_tensor.size(2);
-
-        for (int f = 0; f < nf; ++f)
+        int feature_size = input_tensor.size(0);
+        int h;
+        int w;
+        for (auto cor : border_coords)
         {
-            for (int x = 0; x < nx; ++x)
+            for (int f = 0; f < feature_size; ++f)
             {
-                for (int y = 0; y < ny; ++y)
-                {
-                    if (getTensorCPUValue(input_tensor[f][x][y]) != 0)
-                    {
-                        if (x == 0 && y == 0)
-                        {
-                            if (getTensorCPUValue(input_tensor[f][x + 1][y]) == 0)
-                            {
-                                input_tensor[f][x + 1][y] = ref[f][x + 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y + 1]) == 0)
-                            {
-                                input_tensor[f][x][y + 1] = ref[f][x][y + 1];
-                            }
-                        }
-                        else if (x == 0 && y == ny - 1)
-                        {
-                            if (getTensorCPUValue(input_tensor[f][x + 1][y]) == 0)
-                            {
-                                input_tensor[f][x + 1][y] = ref[f][x + 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y - 1]) == 0)
-                            {
-                                input_tensor[f][x][y - 1] = ref[f][x][y - 1];
-                            }
-                        }
-                        else if (x == nx - 1 && y == 0)
-                        {
-                            if (getTensorCPUValue(input_tensor[f][x - 1][y]) == 0)
-                            {
-                                input_tensor[f][x - 1][y] = ref[f][x - 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y + 1]) == 0)
-                            {
-                                input_tensor[f][x][y + 1] = ref[f][x][y + 1];
-                            }
-                        }
-                        else if (x == nx - 1 && y == ny - 1)
-                        {
-                            if (getTensorCPUValue(input_tensor[f][x - 1][y]) == 0)
-                            {
-                                input_tensor[f][x - 1][y] = ref[f][x - 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y - 1]) == 0)
-                            {
-                                input_tensor[f][x][y - 1] = ref[f][x][y - 1];
-                            }
-                        }
-                        else
-                        {
-                            if (getTensorCPUValue(input_tensor[f][x - 1][y]) == 0)
-                            {
-                                input_tensor[f][x - 1][y] = ref[f][x - 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x + 1][y]) == 0)
-                            {
-                                input_tensor[f][x + 1][y] = ref[f][x + 1][y];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y - 1]) == 0)
-                            {
-                                input_tensor[f][x][y - 1] = ref[f][x][y - 1];
-                            }
-                            if (getTensorCPUValue(input_tensor[f][x][y + 1]) == 0)
-                            {
-                                input_tensor[f][x][y + 1] = ref[f][x][y + 1];
-                            }
-                        }
-                    }
-                }
+                h = std::get<0>(cor);
+                w = std::get<1>(cor);
+                input_tensor[f][h][w] = ref[f][h][w];
             }
         }
     }
@@ -239,6 +189,8 @@ namespace ms
         auto w = grad_in.size(3);
         int64_t start = 0;
         int64_t end = T;
+        //too slow
+        //try parallel
         for (auto t = start; t < end; t++)
         {
             auto stru_t = structures[t];
@@ -257,7 +209,7 @@ namespace ms
                    "expect input structure has same size with data tensor.");
             _unused(f);
             _unused(w);
-            float scale_factor = (float)h / stru_t->grid_height;
+            float scale_factor = (float)h / (stru_t->grid_height * 8);
 
             int n_blocks = stru_t->num_blocks();
             int grid_width = stru_t->grid_width;
@@ -298,20 +250,20 @@ namespace ms
                                                 {
                                                     float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                     float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
-                                                    assign_data_among_tensor(grad_in, grad_out_l4, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                    assign_data_among_tensor(grad_in_t, grad_out_l4_t, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                                 }
                                             }
                                         }
                                         else
                                         {
-                                            assign_data_among_tensor(grad_in, grad_out_l3, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                            assign_data_among_tensor(grad_in_t, grad_out_l3_t, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                         }
                                     }
                                 }
                             }
                             else
                             {
-                                assign_data_among_tensor(grad_in, grad_out_l2, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                                assign_data_among_tensor(grad_in_t, grad_out_l2_t, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                             }
                         }
                     }
@@ -319,9 +271,12 @@ namespace ms
                 else
                 {
                     //if not set, average the content
-                    assign_data_among_tensor(grad_in, grad_out_l1, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+
+                    assign_data_among_tensor(grad_in_t, grad_out_l1_t, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
                 }
             }
         }
+        std::cout << "call backwards" << std::endl;
     }
+
 } // namespace ms

@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:11:08
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-06 17:21:04
+ * @ Modified time: 2020-06-07 23:51:12
  * @ Description:
  */
 
@@ -38,7 +38,7 @@
 namespace ms
 {
 
-    void quadtree_pool2x2_stru_batch(const ptr_wrapper<quadtree *> structures, const int n)
+    void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n)
     {
         for (int i = 0; i < n; ++i)
         {
@@ -58,20 +58,20 @@ namespace ms
             printf("[ERROR] quadtree_gridpool2x2_cpu grid dimension have to be at least 2x2\n");
             exit(-1);
         }
-        quadtree *out = in;
 
-        int n_blocks = out->num_blocks();
+        int n_blocks = in->num_blocks();
+        int grid_width = in->grid_width;
+        qt_tree_t out_tree[n_blocks]{};
         //#pragma omp parallel for
         for (int out_grid_idx = 0; out_grid_idx < n_blocks; ++out_grid_idx)
         {
-            bitset<21UL> &out_tree = out->trees[out_grid_idx];
-
+            bitset<21UL> out_grid_tree = out_tree[out_grid_idx];
             int out_gh, out_gw;
-            out_gh = out_grid_idx / out->grid_width;
-            out_gw = out_grid_idx % out->grid_width;
+            out_gh = out_grid_idx / grid_width;
+            out_gw = out_grid_idx % grid_width;
 
             // first bit is always set, because out block consists of 8 in blocks
-            out_tree.set(0);
+            out_grid_tree.set(0);
 
             int obit_idx_l1 = 1;
             for (int hgh = 0; hgh < 2; ++hgh)
@@ -80,22 +80,22 @@ namespace ms
                 {
                     int in_gh = 2 * out_gh + hgh;
                     int in_gw = 2 * out_gw + wgw;
-                    int in_grid_idx = in_gh * in->grid_width + in_gw;
-                    bitset<21UL> &in_tree = in->trees[in_grid_idx];
+                    int in_grid_idx = in_gh * grid_width + in_gw;
+                    bitset<21UL> &in_grid_tree = in->trees[in_grid_idx];
 
                     //check if first bit in in blocks is set
-                    if (tree_isset_bit(in_tree, 0))
+                    if (tree_isset_bit(in_grid_tree, 0))
                     {
-                        out_tree.set(obit_idx_l1);
+                        out_grid_tree.set(obit_idx_l1);
 
                         int obit_idx_l2 = child_idx(obit_idx_l1);
                         for (int ibit_idx_l1 = 1; ibit_idx_l1 < 5; ++ibit_idx_l1)
                         //TODO: check check
                         {
                             //check if l1 bits are set in in blocks
-                            if (tree_isset_bit(in_tree, ibit_idx_l1))
+                            if (tree_isset_bit(in_grid_tree, ibit_idx_l1))
                             {
-                                out_tree.set(obit_idx_l2);
+                                out_grid_tree.set(obit_idx_l2);
                             }
                             obit_idx_l2++;
                         }
@@ -103,14 +103,20 @@ namespace ms
                     obit_idx_l1++;
                 }
             }
+        }
+        in->n_leafs = 0;
+        in->prefix_leafs[0] = 0;
+        for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
+        {
+            in->trees[grid_idx] = out_tree[grid_idx];
 
             //update n_leafs
-            out->n_leafs += out->trees[out_grid_idx].count() * 3 + 1; //leaves (node*4) - double counted nodes(n-1)
+            in->n_leafs += in->trees[grid_idx].count() * 3 + 1; //leaves (node*4) - double counted nodes(n-1)
 
             //update prefix_leafs
-            if (out_grid_idx >= 1)
+            if (grid_idx >= 1)
             {
-                out->prefix_leafs[out_grid_idx] = out->prefix_leafs[out_grid_idx - 1] + (out->trees[out_grid_idx - 1].count() * 3 + 1);
+                in->prefix_leafs[grid_idx] = in->prefix_leafs[grid_idx - 1] + (in->trees[grid_idx - 1].count() * 3 + 1);
             }
         }
         //quadtree_pool2x2_data_avg(in, out);

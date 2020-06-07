@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 01:00:41
+ * @ Modified time: 2020-06-07 20:21:35
  * @ Description: combine sparse tensors with hierarchy of different depths.
  */
 
@@ -67,7 +67,7 @@ namespace ms
         // each leaf has 8x8 pixels
         assert(f == stru->feature_size && ((float)tensor_h / stru->grid_height) == ((float)stru->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
-        float scale_factor = (float)tensor_h / stru->grid_height;
+        float scale_factor = (float)tensor_h / (stru->grid_height * 8);
 
         quadtree *output = stru;
         if (output->data != nullptr)
@@ -141,6 +141,7 @@ namespace ms
             else
             {
                 //if not set, average the content
+
                 get_data_from_tensor(grid_data, in_l1_src, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
         }
@@ -182,7 +183,7 @@ namespace ms
                    "expect input structure has same size with data tensor.");
             _unused(f);
             _unused(w);
-            float scale_factor = (float)h / stru_t->grid_height;
+            float scale_factor = (float)h / (stru_t->grid_height * 8);
 
             int n_blocks = stru_t->num_blocks();
             int grid_width = stru_t->grid_width;
@@ -223,20 +224,20 @@ namespace ms
                                                 {
                                                     float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                     float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
-                                                    assign_data_among_tensor(grad_in_l4, grad_out, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                    assign_data_among_tensor(grad_in_l4_t, grad_out_t, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                                 }
                                             }
                                         }
                                         else
                                         {
-                                            assign_data_among_tensor(grad_in_l3, grad_out, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                            assign_data_among_tensor(grad_in_l3_t, grad_out_t, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                         }
                                     }
                                 }
                             }
                             else
                             {
-                                assign_data_among_tensor(grad_in_l2, grad_out, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                                assign_data_among_tensor(grad_in_l2_t, grad_out_t, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                             }
                         }
                     }
@@ -244,7 +245,7 @@ namespace ms
                 else
                 {
                     //if not set, average the content
-                    assign_data_among_tensor(grad_in_l1, grad_out, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                    assign_data_among_tensor(grad_in_l1_t, grad_out_t, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
                 }
             }
         }

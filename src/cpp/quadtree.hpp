@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:46:45
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-06 17:25:04
+ * @ Modified time: 2020-06-07 13:15:20
  * @ Description:
  */
 #ifndef QUADTREE
@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <bitset>
 #include <vector>
+#include <tuple>
 #include <assert.h>
 using std::bitset;
 using std::vector;

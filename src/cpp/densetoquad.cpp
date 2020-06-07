@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 01:09:54
+ * @ Modified time: 2020-06-07 11:54:23
  * @ Description:
  */
 
@@ -56,10 +56,6 @@ namespace ms
         }
         output->data = new qt_data_t[output->n_leafs * output->feature_size]{};
 
-        /*******************breakpoint******************/
-        std::cout << scale_factor << std::endl;
-        TORCH_CHECK(1 == 0, "MotionSparsityError: breakpoint0");
-        /*******************breakpoint******************/
         int n_blocks = output->num_blocks();
         int grid_width = output->grid_width;
         int feature_size = output->feature_size;
