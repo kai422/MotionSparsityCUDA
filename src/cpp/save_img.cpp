@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-06-03 17:57:36
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-06 11:41:07
+ * @ Modified time: 2020-06-08 12:33:53
  * @ Description:
  */
 
@@ -30,7 +30,6 @@ namespace ms
             auto dst = img_t.accessor<float, 3>();
 
             float scale_factor = (float)h / (stru_t->grid_height * 8);
-
             int n_blocks = stru_t->num_blocks();
             int grid_width = stru_t->grid_width;
             int feature_size = stru_t->feature_size;

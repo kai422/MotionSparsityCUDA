@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:11:08
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 23:51:12
+ * @ Modified time: 2020-06-08 12:21:13
  * @ Description:
  */
 
@@ -32,6 +32,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "quadtree.hpp"
+#include <iostream>
 #include "grid_pool.hpp"
 #include "common.hpp"
 
@@ -42,11 +43,15 @@ namespace ms
     {
         for (int i = 0; i < n; ++i)
         {
-            quadtree_pool2x2_stru(structures[i]);
+            quadtree *in = structures[i];
+            quadtree *out = quadtree_pool2x2_stru(in);
+
+            structures[i] = out;
+            delete in;
         }
     }
 
-    void quadtree_pool2x2_stru(quadtree *in)
+    quadtree *quadtree_pool2x2_stru(quadtree *in)
     {
         if (in->grid_height % 2 != 0 || in->grid_width % 2 != 0)
         {
@@ -58,14 +63,14 @@ namespace ms
             printf("[ERROR] quadtree_gridpool2x2_cpu grid dimension have to be at least 2x2\n");
             exit(-1);
         }
+        quadtree *out = new quadtree(in->grid_height / 2, in->grid_width / 2, in->feature_size);
 
-        int n_blocks = in->num_blocks();
-        int grid_width = in->grid_width;
-        qt_tree_t out_tree[n_blocks]{};
+        int n_blocks = out->num_blocks();
+        int grid_width = out->grid_width;
         //#pragma omp parallel for
         for (int out_grid_idx = 0; out_grid_idx < n_blocks; ++out_grid_idx)
         {
-            bitset<21UL> out_grid_tree = out_tree[out_grid_idx];
+            bitset<21UL> &out_grid_tree = out->trees[out_grid_idx];
             int out_gh, out_gw;
             out_gh = out_grid_idx / grid_width;
             out_gw = out_grid_idx % grid_width;
@@ -80,7 +85,7 @@ namespace ms
                 {
                     int in_gh = 2 * out_gh + hgh;
                     int in_gw = 2 * out_gw + wgw;
-                    int in_grid_idx = in_gh * grid_width + in_gw;
+                    int in_grid_idx = in_gh * in->grid_width + in_gw;
                     bitset<21UL> &in_grid_tree = in->trees[in_grid_idx];
 
                     //check if first bit in in blocks is set
@@ -103,23 +108,17 @@ namespace ms
                     obit_idx_l1++;
                 }
             }
-        }
-        in->n_leafs = 0;
-        in->prefix_leafs[0] = 0;
-        for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
-        {
-            in->trees[grid_idx] = out_tree[grid_idx];
 
             //update n_leafs
-            in->n_leafs += in->trees[grid_idx].count() * 3 + 1; //leaves (node*4) - double counted nodes(n-1)
-
+            out->n_leafs += out->trees[out_grid_idx].count() * 3 + 1; //leaves (node*4) - double counted nodes(n-1)
             //update prefix_leafs
-            if (grid_idx >= 1)
+            if (out_grid_idx >= 1)
             {
-                in->prefix_leafs[grid_idx] = in->prefix_leafs[grid_idx - 1] + (in->trees[grid_idx - 1].count() * 3 + 1);
+                out->prefix_leafs[out_grid_idx] = out->prefix_leafs[out_grid_idx - 1] + (out->trees[out_grid_idx - 1].count() * 3 + 1);
             }
         }
         //quadtree_pool2x2_data_avg(in, out);
+        return out;
     }
 
     // inline void quadtree_pool2x2_data_avg(const qt_data_t *data_in, qt_size_t feature_size, qt_data_t *data_out)
