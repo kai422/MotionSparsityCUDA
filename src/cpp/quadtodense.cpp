@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 11:40:38
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 20:09:51
+ * @ Modified time: 2020-06-08 23:57:13
  * @ Description:
  */
 
@@ -49,7 +49,7 @@ namespace ms
         assert(f == feature_size && ((float)tensor_h / input_quad->grid_height) == ((float)input_quad->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
         float scale_factor = (float)tensor_h / (grid_height * 8);
-        //#pragma omp parallel for
+#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
             bitset<21UL> &grid_tree = input_quad->trees[grid_idx];

@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 16:47:48
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-06 13:26:04
+ * @ Modified time: 2020-06-08 23:30:58
  * @ Description: create quadtree structure from input HEVC dense image.
  *                This code is largely based on octnet.
  *                based on octnet.
@@ -31,16 +31,18 @@ namespace ms
         int grid_h = 4;
         int grid_w = 4;
         quadtree **ptr_strus = new quadtree *[T] {};
-        int64_t start = 0;
-        int64_t end = T;
-        for (auto t = start; t < end; t++)
-        {
+        //int64_t start = 0;
+        //int64_t end = T;
+        parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
+            for (auto t = start; t < end; t++)
+            {
 
-            auto input_t = input[t];
-            quadtree **ptr_stru_t = ptr_strus + t;
-            create_quadtree_structure(grid_h, grid_w, f, input_t, h, w, ptr_stru_t);
-            //convert gridtree to dense tensor
-        }
+                auto input_t = input[t];
+                quadtree **ptr_stru_t = ptr_strus + t;
+                create_quadtree_structure(grid_h, grid_w, f, input_t, h, w, ptr_stru_t);
+                //convert gridtree to dense tensor
+            }
+        });
 
         return ptr_strus;
     }
@@ -53,6 +55,7 @@ namespace ms
 
         //create quadtree structure by checking the local sparsity and homogeneity of input_tensor.
         int n_blocks = grid_h * grid_w;
+#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
             qt_tree_t &grid_tree = grid->trees[grid_idx];

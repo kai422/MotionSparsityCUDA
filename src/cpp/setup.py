@@ -30,6 +30,8 @@ setup(name="MotionSparsity",
                                          'grid_resize.cpp',
                                          'save_img.cpp', 'pybind.cpp',
                                          'densetoquad.cpp', 'quadtodense.cpp'
-                                     ])
+                                     ],
+                                     extra_compile_args=['-fopenmp'],
+                                     extra_link_args=['-lgomp'])
       ],
       cmdclass={'build_ext': BuildExt})

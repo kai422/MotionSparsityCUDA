@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-16 11:46:16
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 19:05:58
+ * @ Modified time: 2020-06-08 23:30:49
  * @ Description: split dense tensor to three sparse tensors with hierarchy of different depths.
  */
 
@@ -42,33 +42,33 @@ namespace ms
         auto f = input.size(1);
         auto h = input.size(2);
         auto w = input.size(3);
-        int64_t start = 0;
-        int64_t end = T;
-        for (auto t = start; t < end; t++)
-        {
-            auto stru_t = structures[t];
-            auto input_t = input[t];
-            auto out_l1_t = out_l1[t];
-            auto out_l2_t = out_l2[t];
-            auto out_l3_t = out_l3[t];
-            auto out_l4_t = out_l4[t];
+        parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
+            for (auto t = start; t < end; t++)
+            {
+                auto stru_t = structures[t];
+                auto input_t = input[t];
+                auto out_l1_t = out_l1[t];
+                auto out_l2_t = out_l2[t];
+                auto out_l3_t = out_l3[t];
+                auto out_l4_t = out_l4[t];
 
-            //create from dense
-            DenseToQuad(f, h, w, input_t, stru_t);
+                //create from dense
+                DenseToQuad(f, h, w, input_t, stru_t);
 
-            //split to three tensor with padding
-            std::vector<std::tuple<int, int>> border_coords_l1;
-            std::vector<std::tuple<int, int>> border_coords_l2;
-            std::vector<std::tuple<int, int>> border_coords_l3;
-            std::vector<std::tuple<int, int>> border_coords_l4;
+                //split to three tensor with padding
+                std::vector<std::tuple<int, int>> border_coords_l1;
+                std::vector<std::tuple<int, int>> border_coords_l2;
+                std::vector<std::tuple<int, int>> border_coords_l3;
+                std::vector<std::tuple<int, int>> border_coords_l4;
 
-            splitQuadToDense(f, h, w, stru_t, out_l1_t, out_l2_t, out_l3_t, out_l4_t, border_coords_l1, border_coords_l2, border_coords_l3, border_coords_l4);
+                splitQuadToDense(f, h, w, stru_t, out_l1_t, out_l2_t, out_l3_t, out_l4_t, border_coords_l1, border_coords_l2, border_coords_l3, border_coords_l4);
 
-            get_padded_tensor(out_l1_t, input_t, border_coords_l1);
-            get_padded_tensor(out_l2_t, input_t, border_coords_l2);
-            get_padded_tensor(out_l3_t, input_t, border_coords_l3);
-            get_padded_tensor(out_l4_t, input_t, border_coords_l4);
-        }
+                get_padded_tensor(out_l1_t, input_t, border_coords_l1);
+                get_padded_tensor(out_l2_t, input_t, border_coords_l2);
+                get_padded_tensor(out_l3_t, input_t, border_coords_l3);
+                get_padded_tensor(out_l4_t, input_t, border_coords_l4);
+            }
+        });
         //too slow
         //try parallel
     }
@@ -83,7 +83,7 @@ namespace ms
         assert(f == feature_size && ((float)tensor_h / input_quad->grid_height) == ((float)input_quad->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
         float scale_factor = (float)tensor_h / (grid_height * 8);
-        //#pragma omp parallel for
+#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
             bitset<21UL> &grid_tree = input_quad->trees[grid_idx];
@@ -187,96 +187,93 @@ namespace ms
         auto f = grad_in.size(1);
         auto h = grad_in.size(2);
         auto w = grad_in.size(3);
-        int64_t start = 0;
-        int64_t end = T;
-        //too slow
-        //try parallel
-        for (auto t = start; t < end; t++)
-        {
-            auto stru_t = structures[t];
-            auto grad_out_l1_t = grad_out_l1[t];
-            auto grad_out_l2_t = grad_out_l2[t];
-            auto grad_out_l3_t = grad_out_l3[t];
-            auto grad_out_l4_t = grad_out_l4[t];
-            auto grad_in_t = grad_in[t];
-
-            // data_ptr accessor: f_index*(h*w) + h_index*w + w_index
-            // tensor_size tensor_h x tensor_w (256x256)
-            // grid size 64x64
-            // each grid at most 8x8 leaves(at current mv resolution)
-            // each leaf has 8x8 pixels
-            assert(f == stru_t->feature_size && ((float)h / stru_t->grid_height) == ((float)stru_t->grid_width / w) &&
-                   "expect input structure has same size with data tensor.");
-            _unused(f);
-            _unused(w);
-            float scale_factor = (float)h / (stru_t->grid_height * 8);
-
-            int n_blocks = stru_t->num_blocks();
-            int grid_width = stru_t->grid_width;
-            int feature_size = stru_t->feature_size;
-            //#pragma omp parallel for
-            for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
+        parallel_for(0, T, 0, [&](int64_t start, int64_t end) {
+            for (auto t = start; t < end; t++)
             {
-                bitset<21UL> &grid_tree = stru_t->trees[grid_idx];
+                auto stru_t = structures[t];
+                auto grad_out_l1_t = grad_out_l1[t];
+                auto grad_out_l2_t = grad_out_l2[t];
+                auto grad_out_l3_t = grad_out_l3[t];
+                auto grad_out_l4_t = grad_out_l4[t];
+                auto grad_in_t = grad_in[t];
 
-                int grid_h_idx = grid_idx / grid_width;
-                int grid_w_idx = grid_idx % grid_width;
-                float centre_x = grid_w_idx * 8 + 4;
-                float centre_y = grid_h_idx * 8 + 4;
+                // data_ptr accessor: f_index*(h*w) + h_index*w + w_index
+                // tensor_size tensor_h x tensor_w (256x256)
+                // grid size 64x64
+                // each grid at most 8x8 leaves(at current mv resolution)
+                // each leaf has 8x8 pixels
+                assert(f == stru_t->feature_size && ((float)h / stru_t->grid_height) == ((float)stru_t->grid_width / w) &&
+                       "expect input structure has same size with data tensor.");
+                _unused(f);
+                _unused(w);
+                float scale_factor = (float)h / (stru_t->grid_height * 8);
 
-                if (tree_isset_bit(grid_tree, 0))
+                int n_blocks = stru_t->num_blocks();
+                int grid_width = stru_t->grid_width;
+                int feature_size = stru_t->feature_size;
+#pragma omp parallel for
+                for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
                 {
-                    for (int hl1 = 0; hl1 < 2; ++hl1)
+                    bitset<21UL> &grid_tree = stru_t->trees[grid_idx];
+
+                    int grid_h_idx = grid_idx / grid_width;
+                    int grid_w_idx = grid_idx % grid_width;
+                    float centre_x = grid_w_idx * 8 + 4;
+                    float centre_y = grid_h_idx * 8 + 4;
+
+                    if (tree_isset_bit(grid_tree, 0))
                     {
-                        for (int wl1 = 0; wl1 < 2; ++wl1)
+                        for (int hl1 = 0; hl1 < 2; ++hl1)
                         {
-                            int bit_idx_l1 = 1 + hl1 * 2 + wl1;
-                            float centre_x_l1 = centre_x + (wl1 * 4) - 2;
-                            float centre_y_l1 = centre_y + (hl1 * 4) - 2;
-                            if (tree_isset_bit(grid_tree, bit_idx_l1))
+                            for (int wl1 = 0; wl1 < 2; ++wl1)
                             {
-                                for (int hl2 = 0; hl2 < 2; ++hl2)
+                                int bit_idx_l1 = 1 + hl1 * 2 + wl1;
+                                float centre_x_l1 = centre_x + (wl1 * 4) - 2;
+                                float centre_y_l1 = centre_y + (hl1 * 4) - 2;
+                                if (tree_isset_bit(grid_tree, bit_idx_l1))
                                 {
-                                    for (int wl2 = 0; wl2 < 2; ++wl2)
+                                    for (int hl2 = 0; hl2 < 2; ++hl2)
                                     {
-                                        int bit_idx_l2 = child_idx(bit_idx_l1) + hl2 * 2 + wl2;
-                                        float centre_x_l2 = centre_x_l1 + (wl2 * 2) - 1;
-                                        float centre_y_l2 = centre_y_l1 + (hl2 * 2) - 1;
-                                        if (tree_isset_bit(grid_tree, bit_idx_l2))
+                                        for (int wl2 = 0; wl2 < 2; ++wl2)
                                         {
-                                            for (int hl3 = 0; hl3 < 2; ++hl3)
+                                            int bit_idx_l2 = child_idx(bit_idx_l1) + hl2 * 2 + wl2;
+                                            float centre_x_l2 = centre_x_l1 + (wl2 * 2) - 1;
+                                            float centre_y_l2 = centre_y_l1 + (hl2 * 2) - 1;
+                                            if (tree_isset_bit(grid_tree, bit_idx_l2))
                                             {
-                                                for (int wl3 = 0; wl3 < 2; ++wl3)
+                                                for (int hl3 = 0; hl3 < 2; ++hl3)
                                                 {
-                                                    float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
-                                                    float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
-                                                    assign_data_among_tensor(grad_in_t, grad_out_l4_t, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                    for (int wl3 = 0; wl3 < 2; ++wl3)
+                                                    {
+                                                        float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
+                                                        float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
+                                                        assign_data_among_tensor(grad_in_t, grad_out_l4_t, scale_factor, feature_size, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                    }
                                                 }
                                             }
-                                        }
-                                        else
-                                        {
-                                            assign_data_among_tensor(grad_in_t, grad_out_l3_t, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                            else
+                                            {
+                                                assign_data_among_tensor(grad_in_t, grad_out_l3_t, scale_factor, feature_size, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            else
-                            {
-                                assign_data_among_tensor(grad_in_t, grad_out_l2_t, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                                else
+                                {
+                                    assign_data_among_tensor(grad_in_t, grad_out_l2_t, scale_factor, feature_size, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    //if not set, average the content
+                    else
+                    {
+                        //if not set, average the content
 
-                    assign_data_among_tensor(grad_in_t, grad_out_l1_t, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                        assign_data_among_tensor(grad_in_t, grad_out_l1_t, scale_factor, feature_size, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                    }
                 }
             }
-        }
-        std::cout << "call backwards" << std::endl;
+        });
     }
 
 } // namespace ms
