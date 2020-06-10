@@ -2,7 +2,7 @@
 #define COMMON
 #include <atomic>
 #include <omp.h>
-
+#include <iostream>
 #include <torch/extension.h>
 #ifndef _OPENMP
 #define _OPENMP
@@ -52,6 +52,7 @@ inline void parallel_for(
         // choose number of tasks based on grain size and number of threads
         // can't use num_threads clause due to bugs in GOMP's thread pool (See #32008)
         int64_t num_threads = omp_get_num_threads();
+
         if (grain_size > 0)
         {
             num_threads = std::min(num_threads, divup((end - begin), grain_size));

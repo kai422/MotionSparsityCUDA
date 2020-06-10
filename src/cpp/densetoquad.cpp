@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-24 16:58:43
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-08 23:31:28
+ * @ Modified time: 2020-06-09 16:39:03
  * @ Description:
  */
 
@@ -59,7 +59,6 @@ namespace ms
         int n_blocks = output->num_blocks();
         int grid_width = output->grid_width;
         int feature_size = output->feature_size;
-#pragma omp parallel for
         for (int grid_idx = 0; grid_idx < n_blocks; ++grid_idx)
         {
             bitset<21UL> &grid_tree = output->trees[grid_idx];

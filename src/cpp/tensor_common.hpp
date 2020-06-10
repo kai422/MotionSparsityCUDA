@@ -2,7 +2,7 @@
  * @ Author: Kai Xu
  * @ Create Time: 2020-05-26 12:18:41
  * @ Modified by: Kai Xu
- * @ Modified time: 2020-06-07 20:21:38
+ * @ Modified time: 2020-06-09 22:59:04
  * @ Description:
  */
 
@@ -10,7 +10,7 @@
 #define TENSORCOMMON
 
 #include <torch/extension.h>
-
+#include "common.hpp"
 #include "quadtree.hpp"
 namespace ms
 {
@@ -221,21 +221,20 @@ namespace ms
         {
             dst[f] = 0;
         }
-
+        clock_t start, end;
+        start = clock();
         for (int h = h1_tensor; h < h2_tensor; ++h)
         {
             for (int w = w1_tensor; w < w2_tensor; ++w)
             {
                 for (int f = 0; f < feature_size; ++f)
                 {
-                    float val;
-
-                    val = data[f][h][w].cpu().data_ptr<float>()[0];
-                    dst[f] += val;
+                    dst[f] += data[f][h][w].cpu().data_ptr<float>()[0];
                 }
             }
         }
-
+        end = clock();
+        std::cout << "Run time: " << (double)(end - start) / CLOCKS_PER_SEC << "S" << std::endl;
         float norm = (h2_tensor - h1_tensor) * (w2_tensor - w1_tensor);
 
         for (int f = 0; f < feature_size; ++f)
@@ -249,7 +248,10 @@ namespace ms
 
         //data_ptr accessor: f_index*(h*w) + h_index*w + w_index
         //do pooling into one leaf
-
+        // std::cout << omp_in_parallel() << std::endl;
+        // std::cout << omp_get_num_threads() << std::endl;
+        // std::cout << omp_get_thread_num() << std::endl;
+        // std::cout << "------------" << std::endl;
         int h1_tensor = int(h1 * scale_factor);
         int h2_tensor = int(h2 * scale_factor);
         int w1_tensor = int(w1 * scale_factor);
