@@ -8,6 +8,9 @@ namespace ms
 {
     ptr_wrapper<quadtree *> CreateFromDense(at::Tensor &input);
 
+    void SaveQuadStruAsImg(ptr_wrapper<quadtree> stru_ptr, torch::Tensor img);
+
+    /*
     std::vector<torch::Tensor> tensor_split_forward(
         torch::Tensor input,
         ptr_wrapper<quadtree> stru);
@@ -20,8 +23,7 @@ namespace ms
         ptr_wrapper<quadtree> stru);
 
     ptr_wrapper<quadtree> create_quadtree_structure(torch::Tensor input);
-
-    /*
+    
     torch::Tensor tensor_combine_forward(
         torch::Tensor input_l0,
         torch::Tensor input_l1,
