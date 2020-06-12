@@ -12,12 +12,14 @@ namespace ms
         torch::Tensor input,
         ptr_wrapper<quadtree> stru);
 
-    std::vector<torch::Tensor> tensor_split_backward(
+    torch::Tensor tensor_split_backward(
         torch::Tensor grad_out_l0,
         torch::Tensor grad_out_l1,
         torch::Tensor grad_out_l2,
         torch::Tensor grad_out_l3,
         ptr_wrapper<quadtree> stru);
+
+    ptr_wrapper<quadtree> create_quadtree_structure(torch::Tensor input);
 
     // void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r,
     //                             at::Tensor &in_l3_r, at::Tensor &in_l4_r,

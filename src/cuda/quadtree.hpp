@@ -74,7 +74,29 @@ struct quadtree
 
     qt_size_t grid_capacity; // indicates how much memory is allocated for the
                              // trees and prefix_leafs array};
+    qt_data_t data_capacity; // indicates how much memory is allocated for the
+                             // data array};
 };
+
+QUADTREE_FUNCTION
+quadtree *quadtree_new_gpu()
+{
+    quadtree *grid = new quadtree;
+    grid->n = 0;
+    grid->grid_height = 0;
+    grid->grid_width = 0;
+    grid->feature_size = 0;
+    grid->n_leafs = 0;
+
+    grid->trees = nullptr;
+    grid->prefix_leafs = nullptr;
+    grid->data = nullptr;
+
+    grid->grid_capacity = 0;
+    grid->data_capacity = 0;
+
+    return grid;
+}
 
 /// Computes the number of shallow quadtrees in the grid.
 /// Batchsize * height *width
@@ -165,6 +187,17 @@ inline void tree_set_bit(qt_tree_t *num, const int pos)
     num[pos / N_QUAD_TREE_T_BITS] |= (1 << (pos % N_QUAD_TREE_T_BITS));
 }
 
+/// Checks if the bit on pos of num is set, or not.
+///
+/// @param num
+/// @param pos
+/// @return true, if bit is set, otherwise false
+QUADTREE_FUNCTION
+inline bool tree_isset_bit(const qt_tree_t *num, const int pos)
+{
+    return (num[pos / N_QUAD_TREE_T_BITS] & (1 << (pos % N_QUAD_TREE_T_BITS))) != 0;
+}
+
 /// Computes the bit index of the parent for the given bit_idx.
 /// Used to traverse a shallow quadtree.
 /// @warning does not check the range of bit_idx, and will return an invalid
@@ -248,6 +281,7 @@ inline int tree_bit_idx(const qt_tree_t *tree, const int bh, const int bw)
 /// @param bh
 /// @param bw
 /// @return tree level that corresponds to the subscript indices.
+QUADTREE_FUNCTION
 inline int tree_level(const qt_tree_t *tree, const int bh, const int bw)
 {
     const int bit_idx = (1 + 4 + 16) +

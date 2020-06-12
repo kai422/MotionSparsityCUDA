@@ -2,11 +2,12 @@
 #define COMMON
 
 #include <cuda.h>
+#include <cuda_runtime.h>
 #include <torch/extension.h>
 
 #include <vector>
 
-#define _unused(x) ((void)(x))
+#define DEBUG true
 
 template <class T>
 class ptr_wrapper
