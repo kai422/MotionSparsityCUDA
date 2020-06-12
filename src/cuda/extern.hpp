@@ -21,12 +21,20 @@ namespace ms
 
     ptr_wrapper<quadtree> create_quadtree_structure(torch::Tensor input);
 
-    // void DenseCombineForwardCPU(at::Tensor &in_l1_r, at::Tensor &in_l2_r,
-    //                             at::Tensor &in_l3_r, at::Tensor &in_l4_r,
-    //                             at::Tensor &output_r, ptr_wrapper<quadtree *> structures);
-    // void DenseCombineBackwardCPU(at::Tensor &grad_in_l1_r, at::Tensor &grad_in_l2_r,
-    //                              at::Tensor &grad_in_l3_r, at::Tensor &grad_in_l4_r,
-    //                              at::Tensor &grad_out_r, ptr_wrapper<quadtree *> structures);
+    /*
+    torch::Tensor tensor_combine_forward(
+        torch::Tensor input_l0,
+        torch::Tensor input_l1,
+        torch::Tensor input_l2,
+        torch::Tensor input_l3,
+        ptr_wrapper<quadtree> stru_ptr);
+
+    std::vector<torch::Tensor> tensor_combine_backward(
+        torch::Tensor grad_out,
+        ptr_wrapper<quadtree> stru_ptr);
+
+    torch::Tensor pooling_in_grid(torch::Tensor input, ptr_wrapper<quadtree> stru);
+    */
 
     // void quadtree_pool2x2_stru_batch(ptr_wrapper<quadtree *> structures, const int n);
 

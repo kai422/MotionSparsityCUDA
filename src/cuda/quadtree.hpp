@@ -34,6 +34,7 @@
 #define QUADTREE
 
 #include <smmintrin.h>
+#include "common.hpp"
 
 #ifdef __CUDA_ARCH__
 #define QUADTREE_FUNCTION __host__ __device__
@@ -312,6 +313,30 @@ inline int tree_level(const qt_tree_t *tree, const int bh, const int bw)
     {
         return 0;
         //root
+    }
+
+    __global__ void kernel_quadtree_clr_trees(qt_tree_t * trees, const int n_tree_ints)
+    {
+        CUDA_KERNEL_LOOP(idx, n_tree_ints)
+        {
+            trees[idx] = 0;
+        }
+    }
+
+    void quadtree_clr_trees_gpu(quadtree * grid_d)
+    {
+        int n_tree_ints = quadtree_num_blocks(grid_d) * N_TREE_INTS;
+        kernel_quadtree_clr_trees<<<GET_BLOCKS(n_tree_ints), CUDA_NUM_THREADS>>>(
+            grid_d->trees, n_tree_ints);
+        CUDA_POST_KERNEL_CHECK;
+    }
+
+    void octree_free_gpu(octree * grid_d)
+    {
+        device_free(grid_d->trees);
+        device_free(grid_d->prefix_leafs);
+        device_free(grid_d->data);
+        delete grid_d;
     }
 }
 

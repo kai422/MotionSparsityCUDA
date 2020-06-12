@@ -204,7 +204,6 @@ namespace ms
         auto out_l2 = torch::zeros_like(input);
         auto out_l3 = torch::zeros_like(input);
 
-        TORCH_CHECK(true, "MSError: XD");
         float scale_factor_to_grid = (float)(stru_ptr->grid_height * 8)/height;
         const int threads = 32;
         const dim3 BLOCK_DIM(threads, threads);

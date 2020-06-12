@@ -153,6 +153,7 @@
          int num_blocks = quadtree_num_blocks(stru_ptr_gpu); //=grid->n * grid->grid_height * grid->grid_width;
          stru_ptr_gpu->grid_capacity = num_blocks;
          stru_ptr_gpu->trees = device_malloc<qt_tree_t>(num_blocks * N_TREE_INTS);
+         quadtree_clr_trees_gpu(out);
          //stru_ptr_gpu->prefix_leafs = device_malloc<qt_size_t>(num_blocks);
  
          float scale_factor_to_dense = (float)height / (grid_height * 8);

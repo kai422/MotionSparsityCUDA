@@ -61,7 +61,10 @@ void device_free(T *dptr)
   {
     printf("[DEBUG] device_free %p\n", dptr);
   }
-  CUDA_CHECK(cudaFree(dptr));
+  if (dptr != nullptr)
+  {
+    CUDA_CHECK(cudaFree(dptr));
+  }
 }
 
 /// Copies host to device memory.
