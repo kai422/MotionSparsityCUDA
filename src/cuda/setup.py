@@ -14,10 +14,13 @@ setup(name="MotionSparsity",
           CUDAExtension(name="MSBackend",
                         sources=[
                             'data_create.cpp', 'data_create_kernel.cu',
-
-                            #'tensor_split.cpp', 'tensor_split_kernel.cu',
+                            'tensor_split.cpp', 'tensor_split_kernel.cu',
+                            'tensor_combine.cpp', 'tensor_combine_kernel.cu',
+                            'pooling_in_grid.cpp', 'pooling_in_grid_kernel.cu',
+                            'grid_pool.cpp', 'grid_pool_kernel.cu',
+                            'quadtree_kernel.cu',
                             'save_img.cpp', 'save_img_kernel.cu',
-                            'pybind.cpp'
+                            'pybind.cpp',
                         ])
       ],
       cmdclass={'build_ext': BuildExt})

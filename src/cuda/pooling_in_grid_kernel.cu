@@ -52,15 +52,15 @@ namespace
 
     
     template <typename scalar_t>
-    __global__ void pooling_in_grid_cuda_kernel<scalar_t>(
+    __global__ void pooling_in_grid_cuda_kernel(
         const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> input,
         torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> output,
         quadtree stru, float scale_factor_to_dense)
     {
         //batch index
-        const int t = (blockIdx.x * blockDim.x + threadIdx.x) / grad_in.size(1);
+        const int t = (blockIdx.x * blockDim.x + threadIdx.x) / input.size(1);
         //channel index
-        const int c = (blockIdx.x * blockDim.x + threadIdx.x) - t * grad_in.size(1);
+        const int c = (blockIdx.x * blockDim.x + threadIdx.x) - t * input.size(1);
         //grid_height index
         const int gh = blockIdx.y;
         //grid_width index
@@ -102,26 +102,26 @@ namespace
                                                 float centre_x_l3 = centre_x_l2 + (wl3 * 1) - 0.5;
                                                 float centre_y_l3 = centre_y_l2 + (hl3 * 1) - 0.5;
 
-                                                pool_data_among_tensor(input, output, scale_factor, t, c, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
+                                                pool_data_among_tensor(input, output, scale_factor_to_dense, t, c, centre_x_l3 - 0.5, centre_x_l3 + 0.5, centre_y_l3 - 0.5, centre_y_l3 + 0.5);
                                             }
                                         }
                                     }
                                     else
                                     {
-                                        pool_data_among_tensor(input, output, scale_factor, t, c, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
+                                        pool_data_among_tensor(input, output, scale_factor_to_dense, t, c, centre_x_l2 - 1, centre_x_l2 + 1, centre_y_l2 - 1, centre_y_l2 + 1);
                                     }
                                 }
                             }
                         }
                         else
                         {
-                            pool_data_among_tensor(input, output, scale_factor, t, c, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
+                            pool_data_among_tensor(input, output, scale_factor_to_dense, t, c, centre_x_l1 - 2, centre_x_l1 + 2, centre_y_l1 - 2, centre_y_l1 + 2);
                         }
                     }
                 }
             }
             {
-                pool_data_among_tensor(input, output, scale_factor, t, c, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
+                pool_data_among_tensor(input, output, scale_factor_to_dense, t, c, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
         }
     }
@@ -148,7 +148,7 @@ torch::Tensor pooling_in_grid_cuda(
  
         auto output = torch::zeros_like(input);
 
-        float scale_factor_to_dense = (float)height / (grid_height * 8);
+        float scale_factor_to_dense = (float)height / (stru_ptr->grid_height * 8);
 
         const int threads = 512;
         const dim3 BLOCK_DIM(threads);

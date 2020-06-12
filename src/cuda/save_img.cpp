@@ -12,7 +12,7 @@
 namespace ms
 {
     // CUDA declarations
-    void quadtree_cpy_trees_gpu_cpu_cuda(const quadtree *src_d, quadtree *dst_h);
+    void quadtree_cpy_trees_gpu_cpu_cuda(const qt_tree_t *src, qt_tree_t *dst, int num_blocks);
 
     inline void assign_pixel_to_tensor(const int &level, torch::TensorAccessor<float, 3, torch::DefaultPtrTraits> img, const float &scale_factor, const int tensor_h, const int tensor_w, int feature_size, const float h1, const float h2, const float w1, const float w2)
     {
@@ -74,11 +74,11 @@ namespace ms
         int grid_height = stru_ptr->grid_height;
         int grid_width = stru_ptr->grid_width;
         int feature_size = stru_ptr->feature_size;
+        int num_blocks = quadtree_num_blocks(stru_ptr.get());
+        qt_tree_t *grid_tree_cpu = new qt_tree_t[N_TREE_INTS * num_blocks];
+        quadtree_cpy_trees_gpu_cpu_cuda(stru_ptr->trees, grid_tree_cpu, num_blocks);
 
-        qt_tree_t *grid_tree_cpu = new qt_tree_t[N_TREE_INTS * quadtree_num_blocks(stru_ptr)];
-        quadtree_cpy_trees_gpu_cpu_cuda(stru_ptr->trees, grid_tree_cpu)
-
-            for (auto t = 0; t < T; t++)
+        for (auto t = 0; t < T; t++)
         {
             auto img_t = img[t];
             auto dst = img_t.accessor<float, 3>();
@@ -89,8 +89,8 @@ namespace ms
             {
                 int grid_h_idx = grid_idx / grid_width;
                 int grid_w_idx = grid_idx % grid_width;
-                qt_tree_t *grid_tree = grid->trees + grid_tree_cpu * N_TREE_INTS;
-                int global_grid_idx = quadtree_grid_idx(stru_ptr, t, grid_h_idx, grid_w_idx);
+                int global_grid_idx = quadtree_grid_idx(stru_ptr.get(), t, grid_h_idx, grid_w_idx);
+                qt_tree_t *grid_tree = grid_tree_cpu + global_grid_idx * N_TREE_INTS;
 
                 //move from gpu to cpu
 

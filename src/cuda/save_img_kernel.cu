@@ -12,8 +12,8 @@
 
  namespace ms
 {
-    void quadtree_cpy_trees_gpu_cpu_cuda(const quadtree* src_d, quadtree* dst_h) {
+    void quadtree_cpy_trees_gpu_cpu_cuda(const qt_tree_t* src, qt_tree_t* dst, int num_blocks) {
         if(DEBUG) { printf("[DEBUG] quadtree_cpy_trees_gpu_cpu\n"); }
-        device_to_host(src_d->trees, dst_h->trees, quadtree_num_blocks(src_d) * N_TREE_INTS);
+        device_to_host(src, dst, num_blocks * N_TREE_INTS);
     }
 }

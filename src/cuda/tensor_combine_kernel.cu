@@ -28,17 +28,17 @@ namespace {
         const quadtree stru, float scale_factor_to_grid)
     {
         //batch index
-        const int t = blockIdx.z / input.size(1);
+        const int t = blockIdx.z / output.size(1);
         //channel index
-        const int c = blockIdx.z - t*input.size(1);
+        const int c = blockIdx.z - t*output.size(1);
         //height index
         const int h = blockIdx.x * blockDim.x + threadIdx.x;
         //width index
         const int w = blockIdx.y * blockDim.y + threadIdx.y;
         //dense_height
-        const int dense_height = input.size(2);
+        const int dense_height = output.size(2);
         //dense_width
-        const int dense_width = input.size(3);
+        const int dense_width = output.size(3);
 
         //grid index and voxel index inside this grid.
         int dense_h = (h*scale_factor_to_grid);
@@ -49,7 +49,7 @@ namespace {
         int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
     
 
-        int grid_idx =quadtree_grid_idx(&stru, n, gh, gw);
+        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
         const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
         int level = tree_level(tree, bh, bw);
 
@@ -67,7 +67,7 @@ namespace {
             case 3:
                 output[t][c][h][w] = input_l3[t][c][h][w];
                 break;
-            default;
+            default:
                 break;            
         }
     }
@@ -75,25 +75,25 @@ namespace {
 
     template <typename scalar_t>
     __global__ void tensor_combine_backward_cuda_kernel(
-        const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grid_out,
-        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grid_in_l0,
-        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grid_in_l1,
-        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grid_in_l2,
-        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grid_in_l3,
+        const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_out,
+        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_in_l0,
+        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_in_l1,
+        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_in_l2,
+        torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_in_l3,
         const quadtree stru, float scale_factor_to_grid)
     {
         //batch index
-        const int t = blockIdx.z / grad_in.size(1);
+        const int t = blockIdx.z / grad_out.size(1);
         //channel index
-        const int c = blockIdx.z - t*grad_in.size(1);
+        const int c = blockIdx.z - t*grad_out.size(1);
         //height index
         const int h = blockIdx.x * blockDim.x + threadIdx.x;
         //width index
         const int w = blockIdx.y * blockDim.y + threadIdx.y;
         //dense_height
-        const int dense_height = grad_in.size(2);
+        const int dense_height = grad_out.size(2);
         //dense_width
-        const int dense_width = grad_in.size(3);
+        const int dense_width = grad_out.size(3);
 
         //grid index and voxel index inside this grid.
         int dense_h = (h*scale_factor_to_grid);
@@ -120,7 +120,7 @@ namespace {
             case 3:
                 grad_in_l3[t][c][h][w] = grad_out[t][c][h][w];
                 break;
-            default;
+            default:
                 break;            
         }
     } 
@@ -174,7 +174,7 @@ namespace ms
             input_l1.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             input_l2.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             input_l3.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
-            *stru, scale_factor_to_grid);
+            *stru_ptr, scale_factor_to_grid);
         }));
         CUDA_POST_KERNEL_CHECK;
         return output;
@@ -182,7 +182,7 @@ namespace ms
 
     std::vector<torch::Tensor> tensor_combine_backward_cuda(
         torch::Tensor grad_out,
-        quadtree *stru_ptr);
+        quadtree *stru_ptr)
     {
         auto dim = grad_out.ndimension();
         TORCH_CHECK(dim == 4, "MSError: expected 4D tensor, but got tensor with ", dim, " dimensions instead");
@@ -194,10 +194,10 @@ namespace ms
         TORCH_CHECK(batch_size == stru_ptr->n, "MSError: expected tensors have the same batchsize with structure object");
         TORCH_CHECK(channel == stru_ptr->feature_size, "MSError: expected tensors have the same feature_size with structure object");
 
-        auto grad_in_l0 = torch::zeros_like(input);
-        auto grad_in_l1 = torch::zeros_like(input);
-        auto grad_in_l2 = torch::zeros_like(input);
-        auto grad_in_l3 = torch::zeros_like(input);
+        auto grad_in_l0 = torch::zeros_like(grad_out);
+        auto grad_in_l1 = torch::zeros_like(grad_out);
+        auto grad_in_l2 = torch::zeros_like(grad_out);
+        auto grad_in_l3 = torch::zeros_like(grad_out);
         
         float scale_factor_to_grid = (float)(stru_ptr->grid_height * 8)/height;
         const int threads = 32;

@@ -34,7 +34,10 @@
 #define QUADTREE
 
 #include <smmintrin.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include "common.hpp"
+#include "gpu.hpp"
 
 #ifdef __CUDA_ARCH__
 #define QUADTREE_FUNCTION __host__ __device__
@@ -80,7 +83,7 @@ struct quadtree
 };
 
 QUADTREE_FUNCTION
-quadtree *quadtree_new_gpu()
+inline quadtree *quadtree_new_gpu()
 {
     quadtree *grid = new quadtree;
     grid->n = 0;
@@ -223,17 +226,6 @@ inline int tree_child_bit_idx(const int bit_idx)
     return 4 * bit_idx + 1;
 }
 
-/// Checks if the bit on pos of num is set, or not.
-///
-/// @param num
-/// @param pos
-/// @return true, if bit is set, otherwise false
-QUADTREE_FUNCTION
-inline bool tree_isset_bit(const qt_tree_t *num, const int pos)
-{
-    return (num[pos / N_QUAD_TREE_T_BITS] & (1 << (pos % N_QUAD_TREE_T_BITS))) != 0;
-}
-
 /// Computes the bit_idx in a shallow quadtree as encoded in tree using the subscript
 /// indices bh, and bw.
 ///
@@ -314,30 +306,10 @@ inline int tree_level(const qt_tree_t *tree, const int bh, const int bw)
         return 0;
         //root
     }
-
-    __global__ void kernel_quadtree_clr_trees(qt_tree_t * trees, const int n_tree_ints)
-    {
-        CUDA_KERNEL_LOOP(idx, n_tree_ints)
-        {
-            trees[idx] = 0;
-        }
-    }
-
-    void quadtree_clr_trees_gpu(quadtree * grid_d)
-    {
-        int n_tree_ints = quadtree_num_blocks(grid_d) * N_TREE_INTS;
-        kernel_quadtree_clr_trees<<<GET_BLOCKS(n_tree_ints), CUDA_NUM_THREADS>>>(
-            grid_d->trees, n_tree_ints);
-        CUDA_POST_KERNEL_CHECK;
-    }
-
-    void octree_free_gpu(octree * grid_d)
-    {
-        device_free(grid_d->trees);
-        device_free(grid_d->prefix_leafs);
-        device_free(grid_d->data);
-        delete grid_d;
-    }
 }
+
+void quadtree_clr_trees_gpu(quadtree *grid_d);
+
+void quadtree_free_gpu(quadtree *grid_d);
 
 #endif

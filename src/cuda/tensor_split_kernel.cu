@@ -48,7 +48,7 @@ namespace {
         int bh = dense_h - gh*8;    // int bh = (h*scale_factor) % 8;
         int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
             
-        int grid_idx =quadtree_grid_idx(&stru, n, gh, gw);
+        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
         const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
         int level = tree_level(tree, bh, bw);
         switch(level)
