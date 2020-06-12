@@ -4,37 +4,31 @@
 
 #include "common.hpp"
 #include "quadtree.hpp"
-// CUDA forward declarations
-
-std::vector<torch::Tensor> tensor_split_cuda_forward(
-    torch::Tensor input,
-    ptr_wrapper<quadtree> stru);
-
-torch::Tensor tensor_split_cuda_backward(
-    torch::Tensor grad_out_l0,
-    torch::Tensor grad_out_l1,
-    torch::Tensor grad_out_l2,
-    torch::Tensor grad_out_l3,
-    ptr_wrapper<quadtree> stru);
-
-// C++ interface
-
-#define CHECK_CUDA(x) TORCH_CHECK(x.is_cuda(), #x " must be a CUDA tensor")
-#define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
-#define CHECK_INPUT(x) \
-    CHECK_CUDA(x);     \
-    CHECK_CONTIGUOUS(x)
 
 namespace ms
 {
+    // CUDA declarations
+
+    std::vector<torch::Tensor> tensor_split_forward_cuda(
+        torch::Tensor input,
+        quadtree *stru_ptr);
+
+    torch::Tensor tensor_split_backward_cuda(
+        torch::Tensor grad_out_l0,
+        torch::Tensor grad_out_l1,
+        torch::Tensor grad_out_l2,
+        torch::Tensor grad_out_l3,
+        quadtree *stru_ptr);
+
+    // C++ interface
     std::vector<torch::Tensor> tensor_split_forward(
         torch::Tensor input,
-        ptr_wrapper<quadtree> stru)
+        ptr_wrapper<quadtree> stru_ptr)
     {
         input = input.contiguous();
         CHECK_INPUT(input);
 
-        return tensor_split_cuda_forward(input, stru);
+        return tensor_split_forward_cuda(input, stru_ptr.get());
     }
 
     torch::Tensor tensor_split_backward(
@@ -42,7 +36,7 @@ namespace ms
         torch::Tensor grad_out_l1,
         torch::Tensor grad_out_l2,
         torch::Tensor grad_out_l3,
-        ptr_wrapper<quadtree> stru)
+        ptr_wrapper<quadtree> stru_ptr)
     {
         grad_out_l0 = grad_out_l0.contiguous();
         grad_out_l1 = grad_out_l1.contiguous();
@@ -53,6 +47,6 @@ namespace ms
         CHECK_INPUT(grad_out_l2);
         CHECK_INPUT(grad_out_l3);
 
-        return tensor_split_cuda_backward(grad_out_l0, grad_out_l1, grad_out_l2, grad_out_l3, stru);
+        return tensor_split_backward_cuda(grad_out_l0, grad_out_l1, grad_out_l2, grad_out_l3, stru_ptr.get());
     }
 } // namespace ms

@@ -13,7 +13,7 @@ setup(name="MotionSparsity",
       ext_modules=[
           CUDAExtension(name="MSBackend",
                         sources=[
-                            'data_create.cpp', 'data_create.cu',
+                            'data_create.cpp', 'data_create_kernel.cu',
                             'tensor_split.cpp', 'tensor_split_kernel.cu',
                             'pybind.cpp'
                         ])

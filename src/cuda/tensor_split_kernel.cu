@@ -19,7 +19,7 @@
 
 namespace {
     template <typename scalar_t>
-    __global__ void tensor_split_cuda_forward_kernel(
+    __global__ void tensor_split_forward_cuda_kernel(
         const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> input,
         torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> out_l0,
         torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> out_l1,
@@ -126,7 +126,7 @@ namespace {
 
     //TODO: (?)do backward in padded area.
     template <typename scalar_t>
-    __global__ void tensor_split_cuda_backward_kernel(
+    __global__ void tensor_split_backward_cuda_kernel(
         torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_in,
         const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_out_l0,
         const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> grad_out_l1,
@@ -184,9 +184,9 @@ namespace {
 namespace ms
 {
 
-    std::vector<torch::Tensor> tensor_split_cuda_forward(
+    std::vector<torch::Tensor> tensor_split_forward_cuda(
         torch::Tensor input,
-        ptr_wrapper<quadtree> stru)
+        quadtree* stru_ptr)
     {
         auto dim = input.ndimension();
         TORCH_CHECK(dim == 4, "MSError: expected 4D tensor, but got tensor with ", dim, " dimensions instead");
@@ -196,8 +196,8 @@ namespace ms
         const auto height = input.size(2);
         const auto width = input.size(3);
 
-        TORCH_CHECK(batch_size == stru->n, "MSError: expected tensors have the same batchsize with structure object");
-        TORCH_CHECK(channel == stru->feature_size, "MSError: expected tensors have the same feature_size with structure object");
+        TORCH_CHECK(batch_size == stru_ptr->n, "MSError: expected tensors have the same batchsize with structure object");
+        TORCH_CHECK(channel == stru_ptr->feature_size, "MSError: expected tensors have the same feature_size with structure object");
 
         auto out_l0 = torch::zeros_like(input);
         auto out_l1 = torch::zeros_like(input);
@@ -205,20 +205,20 @@ namespace ms
         auto out_l3 = torch::zeros_like(input);
 
         TORCH_CHECK(true, "MSError: XD");
-        float scale_factor_to_grid = (float)(stru->grid_height * 8)/height;
+        float scale_factor_to_grid = (float)(stru_ptr->grid_height * 8)/height;
         const int threads = 32;
         const dim3 BLOCK_DIM(threads, threads);
         const int blocks = (height + threads - 1) / threads;
         const dim3 GRID_DIM(blocks, blocks, batch_size*channel);
 
-        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "tensor_split_cuda_forward_kernel", ([&] {
-        tensor_split_cuda_forward_kernel<scalar_t><<<GRID_DIM, BLOCK_DIM>>>(
+        AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "tensor_split_forward_cuda_kernel", ([&] {
+        tensor_split_forward_cuda_kernel<scalar_t><<<GRID_DIM, BLOCK_DIM>>>(
             input.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             out_l0.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             out_l1.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             out_l2.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             out_l3.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
-            *stru, scale_factor_to_grid);
+            *stru_ptr, scale_factor_to_grid);
         }));
         CUDA_POST_KERNEL_CHECK;
 
@@ -226,12 +226,12 @@ namespace ms
     }
 
 
-    torch::Tensor tensor_split_cuda_backward(
+    torch::Tensor tensor_split_backward_cuda(
         torch::Tensor grad_out_l0,
         torch::Tensor grad_out_l1,
         torch::Tensor grad_out_l2,
         torch::Tensor grad_out_l3,
-        ptr_wrapper<quadtree> stru)
+        quadtree* stru_ptr)
     {
 
         auto dim = grad_out_l0.ndimension();
@@ -245,25 +245,25 @@ namespace ms
         const auto height = grad_out_l0.size(2);
         const auto width = grad_out_l0.size(3);
 
-        TORCH_CHECK(batch_size == stru->n, "MSError: expected tensors have the same batchsize with structure object");
-        TORCH_CHECK(channel == stru->feature_size, "MSError: expected tensors have the same feature_size with structure object");
+        TORCH_CHECK(batch_size == stru_ptr->n, "MSError: expected tensors have the same batchsize with structure object");
+        TORCH_CHECK(channel == stru_ptr->feature_size, "MSError: expected tensors have the same feature_size with structure object");
 
         auto grad_in = torch::zeros_like(grad_out_l0);
 
-        float scale_factor_to_grid = (float)(stru->grid_height * 8)/height;
+        float scale_factor_to_grid = (float)(stru_ptr->grid_height * 8)/height;
         const int threads = 32;
         const dim3 BLOCK_DIM(threads, threads);
         const int blocks = (height + threads - 1) / threads;
         const dim3 GRID_DIM(blocks, blocks, batch_size*channel);
 
-        AT_DISPATCH_FLOATING_TYPES(grad_in.scalar_type(), "tensor_split_cuda_backward_kernel", ([&] {
-        tensor_split_cuda_backward_kernel<scalar_t><<<GRID_DIM, BLOCK_DIM>>>(
+        AT_DISPATCH_FLOATING_TYPES(grad_in.scalar_type(), "tensor_split_backward_cuda_kernel", ([&] {
+        tensor_split_backward_cuda_kernel<scalar_t><<<GRID_DIM, BLOCK_DIM>>>(
             grad_in.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             grad_out_l0.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             grad_out_l1.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             grad_out_l2.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             grad_out_l3.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
-            *stru, scale_factor_to_grid);
+            *stru_ptr, scale_factor_to_grid);
         }));
         CUDA_POST_KERNEL_CHECK;
 

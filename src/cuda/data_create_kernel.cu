@@ -65,12 +65,8 @@
      template <typename scalar_t>
      __global__ void create_quadtree_structure_cuda_kernel<scalar_t>(
          const torch::PackedTensorAccessor32<scalar_t, 4, torch::RestrictPtrTraits> input,
-         quadtree stru, float scale_factor_to_dense, int n_blocks);
+         quadtree stru, float scale_factor_to_dense);
      {
-         //         const int threads = 512;
-         // const dim3 BLOCK_DIM(threads);
-         // const int blocks = (batch_size + threads - 1) / threads;
-         // const dim3 GRID_DIM(blocks, grid_height, grid_width);
          //batch index
          const int t = blockIdx.x * blockDim.x + threadIdx.x;
          //grid_height index
@@ -169,7 +165,7 @@
          AT_DISPATCH_FLOATING_TYPES(input.scalar_type(), "create_quadtree_structure_cuda_kernel", ([&] {
                                         create_quadtree_structure_cuda_kernel<scalar_t><<<GRID_DIM, BLOCK_DIM>>>(
                                             input.packed_accessor32<scalar_t, 4, torch::RestrictPtrTraits>(),
-                                            *stru_ptr_gpu, scale_factor_to_dense, num_blocks);
+                                            *stru_ptr_gpu, scale_factor_to_dense);
                                     }));
          CUDA_POST_KERNEL_CHECK;
  
