@@ -40,87 +40,111 @@ namespace {
         //dense_width
         const int dense_width = input.size(3);
 
-        //grid index and voxel index inside this grid.
-        int dense_h = (h*scale_factor_to_grid);
-        int dense_w = (w*scale_factor_to_grid);
-        int gh = dense_h >> 3;      // int gh = (h*scale_factor_to_grid) / 8;
-        int gw = dense_w >> 3;      // int gw = (w*scale_factor_to_grid) / 8;
-        int bh = dense_h - gh*8;    // int bh = (h*scale_factor) % 8;
-        int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
-            
-        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
-        const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
-        int level = tree_level(tree, bh, bw);
-        switch(level)
+        if(t < input.size(0) && c < input.size(1) && h < input.size(2) && w < input.size(2))
         {
-            case 0:
-                //with padding (inefficient)
-                for(int i = h-1; i<=h+1; ++i)
-                {
-                    for(int j = w-1; j<=w+1; ++j)
+            //grid index and voxel index inside this grid.
+            int grid_idx_h = (h*scale_factor_to_grid);
+            int grid_idx_w = (w*scale_factor_to_grid);
+            int gw = grid_idx_h >> 3 ;      //  
+            int gh = grid_idx_w >> 3;      // grid w h order is differ from tensor
+            int bw = grid_idx_h - gw*8;    // int bh = (h*scale_factor) % 8;
+            int bh = grid_idx_w - gh*8;    // int bw = (w*scale_factor) % 8;
+
+            int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
+            const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
+            int level = tree_level(tree, bh, bw);
+            // if(t==0&&c==1&&h==66&&w==194)
+            // {
+                
+            //     for (int i = 0; i < 32; ++i)
+            //     {
+            //         printf("%d|",stru.trees[i]);
+            //     }
+            //     printf("\n");
+            //     printf("t: %d, c: %d, h: %d, w: %d, grid_idx_h: %d, grid_idx_w: %d, grid_idx: %d,  gh: %d, gw: %d, bh: %d, bw: %d, level: %d, scale_factor_to_grid: %f \n", t, c, h, w, grid_idx_h, grid_idx_w, grid_idx,  gh, gw, bh, bw, level, scale_factor_to_grid); 
+            //     printf("tree_bit0: %d, tree_bit1: %x\n", tree[0], tree[1]);
+            //     int bit_idx = (1 + 4 + 16) +
+            //     (bh % 2 == 1) * 1 + (bh / 2 % 2 == 1) * 4 + (bh / 4 % 2 == 1) * 16 +
+            //     (bw % 2 == 1) * 2 + (bw / 2 % 2 == 1) * 8 + (bw / 4 % 2 == 1) * 32;
+            //     printf("bit_idx: %d \n", bit_idx);
+            //     printf("tree_parent_bit_idx(bit_idx): %d \n", tree_parent_bit_idx(bit_idx));
+            //     printf("tree_isset_bit(tree, tree_parent_bit_idx(bit_idx)): %d \n", tree_isset_bit(tree, tree_parent_bit_idx(bit_idx)));
+                
+            // }
+            switch(level)
+            {
+                case 0:
+                    //with padding (inefficient)
+                    for(int i = h-1; i<=h+1; ++i)
                     {
-                        // Range checks if we are hanging off the matrix
-                        if(i >= 0 && i < dense_height)
+                        for(int j = w-1; j<=w+1; ++j)
                         {
-                            if(j >= 0 && j < dense_width)
+                            // Range checks if we are hanging off the matrix
+                            if(i >= 0 && i < dense_height)
                             {
-                                out_l0[t][c][i][j] = input[t][c][i][j];
+                                if(j >= 0 && j < dense_width)
+                                {
+                                    out_l0[t][c][i][j] = input[t][c][i][j];
+                                }
                             }
                         }
                     }
-                }
-                break;
-            case 1:
-                for(int i = h-1; i<=h+1; ++i)
-                {
-                    for(int j = w-1; j<=w+1; ++j)
+                    break;
+                case 1:
+                    for(int i = h-1; i<=h+1; ++i)
                     {
-                        // Range checks if we are hanging off the matrix
-                        if(i >= 0 && i < dense_height)
+                        for(int j = w-1; j<=w+1; ++j)
                         {
-                            if(j >= 0 && j < dense_width)
+                            // Range checks if we are hanging off the matrix
+                            if(i >= 0 && i < dense_height)
                             {
-                                out_l1[t][c][i][j] = input[t][c][i][j];
+                                if(j >= 0 && j < dense_width)
+                                {
+                                    out_l1[t][c][i][j] = input[t][c][i][j];
+                                }
                             }
                         }
                     }
-                }
-                break;
-            case 2:
-                for(int i = h-1; i<=h+1; ++i)
-                {
-                    for(int j = w-1; j<=w+1; ++j)
+                    break;
+                case 2:
+                    for(int i = h-1; i<=h+1; ++i)
                     {
-                        // Range checks if we are hanging off the matrix
-                        if(i >= 0 && i < dense_height)
+                        for(int j = w-1; j<=w+1; ++j)
                         {
-                            if(j >= 0 && j < dense_width)
+                            // Range checks if we are hanging off the matrix
+                            if(i >= 0 && i < dense_height)
                             {
-                                out_l2[t][c][i][j] = input[t][c][i][j];
+                                if(j >= 0 && j < dense_width)
+                                {
+                                    out_l2[t][c][i][j] = input[t][c][i][j];
+                                }
                             }
                         }
                     }
-                }
-                break;
-            case 3:
-                for(int i = h-1; i<=h+1; ++i)
-                {
-                    for(int j = w-1; j<=w+1; ++j)
+                    break;
+                case 3:
+                    for(int i = h-1; i<=h+1; ++i)
                     {
-                        // Range checks if we are hanging off the matrix
-                        if(i >= 0 && i < dense_height)
+                        for(int j = w-1; j<=w+1; ++j)
                         {
-                            if(j >= 0 && j < dense_width)
+                            // Range checks if we are hanging off the matrix
+                            if(i >= 0 && i < dense_height)
                             {
-                                out_l3[t][c][i][j] = input[t][c][i][j];
+                                if(j >= 0 && j < dense_width)
+                                {
+                                    out_l3[t][c][i][j] = input[t][c][i][j];
+                                }
                             }
                         }
                     }
-                }
-                break;
-            default:
-                break;            
+                    break;
+                default:
+                    break;            
+            }
+
         }
+
+        
     } 
 
 
@@ -148,34 +172,37 @@ namespace {
         //dense_width
         const int dense_width = grad_in.size(3);
 
-        //grid index and voxel index inside this grid.
-        int dense_h = (h*scale_factor_to_grid);
-        int dense_w = (w*scale_factor_to_grid);
-        int gh = dense_h >> 3;      // int gh = (h*scale_factor_to_grid) / 8;
-        int gw = dense_w >> 3;      // int gw = (w*scale_factor_to_grid) / 8;
-        int bh = dense_h - gh*8;    // int bh = (h*scale_factor) % 8;
-        int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
-        
-
-        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
-        const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
-        int level = tree_level(tree, bh, bw);
-        switch(level)
+        if(t < grad_in.size(0) && c < grad_in.size(1) && h < grad_in.size(2) && w < grad_in.size(2))
         {
-            case 0:
-                grad_in[t][c][h][w]=grad_out_l0[t][c][h][w];
-                break;
-            case 1:
-                grad_in[t][c][h][w]=grad_out_l1[t][c][h][w];
-                break;
-            case 2:
-                grad_in[t][c][h][w]=grad_out_l2[t][c][h][w];
-                break;
-            case 3:
-                grad_in[t][c][h][w]=grad_out_l3[t][c][h][w];
-                break;
-            default:
-                break;            
+            //grid index and voxel index inside this grid.
+            int grid_idx_h = (h*scale_factor_to_grid);
+            int grid_idx_w = (w*scale_factor_to_grid);
+            int gw = grid_idx_h >> 3 ;      //  
+            int gh = grid_idx_w >> 3;      // grid w h order is differ from tensor
+            int bw = grid_idx_h - gw*8;    // int bh = (h*scale_factor) % 8;
+            int bh = grid_idx_w - gh*8;    // int bw = (w*scale_factor) % 8;
+
+            int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
+            const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
+            int level = tree_level(tree, bh, bw);
+            
+            switch(level)
+            {
+                case 0:
+                    grad_in[t][c][h][w]=grad_out_l0[t][c][h][w];
+                    break;
+                case 1:
+                    grad_in[t][c][h][w]=grad_out_l1[t][c][h][w];
+                    break;
+                case 2:
+                    grad_in[t][c][h][w]=grad_out_l2[t][c][h][w];
+                    break;
+                case 3:
+                    grad_in[t][c][h][w]=grad_out_l3[t][c][h][w];
+                    break;
+                default:
+                    break;            
+            }
         }
     }
 }//anonymous namespace

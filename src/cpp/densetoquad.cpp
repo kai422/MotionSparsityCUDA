@@ -48,6 +48,7 @@ namespace ms
         assert(f == stru->feature_size && ((float)tensor_h / stru->grid_height) == ((float)stru->grid_width / tensor_w) &&
                "expect input structure has same size with data tensor.");
         float scale_factor = (float)tensor_h / (stru->grid_height * 8);
+        _unused(scale_factor);
 
         quadtree *output = stru;
         if (output->data != nullptr)

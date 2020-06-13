@@ -14,8 +14,8 @@ __global__ void kernel_quadtree_clr_trees(qt_tree_t *trees, const int n_tree_int
 void quadtree_free_gpu(quadtree *grid_d)
 {
     device_free(grid_d->trees);
-    device_free(grid_d->prefix_leafs);
-    device_free(grid_d->data);
+    //device_free(grid_d->prefix_leafs);
+    //device_free(grid_d->data);
     delete grid_d;
 }
 void quadtree_clr_trees_gpu(quadtree *grid_d)

@@ -7,6 +7,7 @@
  */
 #include <torch/extension.h>
 
+#include "iostream"
 #include "common.hpp"
 #include "quadtree.hpp"
 namespace ms
@@ -75,8 +76,17 @@ namespace ms
         int grid_width = stru_ptr->grid_width;
         int feature_size = stru_ptr->feature_size;
         int num_blocks = quadtree_num_blocks(stru_ptr.get());
-        qt_tree_t *grid_tree_cpu = new qt_tree_t[N_TREE_INTS * num_blocks];
+        //std::cout << "array length: " << N_TREE_INTS * num_blocks << std::endl;
+        // std::cout << "tree_device_ptr: " << stru_ptr->trees << std::endl;
+
+        qt_tree_t *grid_tree_cpu = new qt_tree_t[N_TREE_INTS * num_blocks]{};
         quadtree_cpy_trees_gpu_cpu_cuda(stru_ptr->trees, grid_tree_cpu, num_blocks);
+
+        // for (int i = 0; i < N_TREE_INTS * num_blocks; ++i)
+        // {
+        //     std::cout << grid_tree_cpu[i] << '|';
+        // }
+        // std::cout << std::endl;
 
         for (auto t = 0; t < T; t++)
         {
@@ -92,6 +102,11 @@ namespace ms
                 int global_grid_idx = quadtree_grid_idx(stru_ptr.get(), t, grid_h_idx, grid_w_idx);
                 qt_tree_t *grid_tree = grid_tree_cpu + global_grid_idx * N_TREE_INTS;
 
+                // if (global_grid_idx == 7)
+                // {
+                //     std::cout << "grid_idx" << grid_idx << std::endl;
+                //     printf("tree_bit0: %d, tree_bit1: %d\n", grid_tree[0], grid_tree[1]);
+                // }
                 //move from gpu to cpu
 
                 float centre_x = grid_w_idx * 8 + 4;
@@ -117,6 +132,10 @@ namespace ms
                                         float centre_y_l2 = centre_y_l1 + (hl2 * 2) - 1;
                                         if (tree_isset_bit(grid_tree, bit_idx_l2))
                                         {
+                                            // if (global_grid_idx == 7)
+                                            // {
+                                            //     std::cout << "bit_idx_l2: " << bit_idx_l2 << "  " << tree_isset_bit(grid_tree, bit_idx_l2) << std::endl;
+                                            // }
                                             for (int hl3 = 0; hl3 < 2; ++hl3)
                                             {
                                                 for (int wl3 = 0; wl3 < 2; ++wl3)

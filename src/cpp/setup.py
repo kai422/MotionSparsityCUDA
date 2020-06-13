@@ -18,10 +18,10 @@ class BuildExt(cpp_extension.BuildExtension):
         super(BuildExt, self).build_extensions()
 
 
-setup(name="MotionSparsity",
+setup(name="MotionSparsityCPU",
       version="0.0.0",
       ext_modules=[
-          cpp_extension.CppExtension(name="MSBackend",
+          cpp_extension.CppExtension(name="MSBackendCPU",
                                      sources=[
                                          'data_create.cpp',
                                          'tensor_split.cpp',

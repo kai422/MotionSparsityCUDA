@@ -36,7 +36,7 @@ namespace
                 {
                     int igh = 2 * ogh + hgh;
                     int igw = 2 * ogw + wgw;
-                    int in_grid_idx = quadtree_grid_idx(&out, t, igh, igw);
+                    int in_grid_idx = quadtree_grid_idx(&in, t, igh, igw);
                     qt_tree_t* in_tree = quadtree_get_tree(&in, in_grid_idx);
        
                     //check if first bit in in blocks is set

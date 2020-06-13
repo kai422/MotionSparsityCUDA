@@ -221,8 +221,6 @@ namespace ms
         {
             dst[f] = 0;
         }
-        clock_t start, end;
-        start = clock();
         for (int h = h1_tensor; h < h2_tensor; ++h)
         {
             for (int w = w1_tensor; w < w2_tensor; ++w)
@@ -233,8 +231,6 @@ namespace ms
                 }
             }
         }
-        end = clock();
-        std::cout << "Run time: " << (double)(end - start) / CLOCKS_PER_SEC << "S" << std::endl;
         float norm = (h2_tensor - h1_tensor) * (w2_tensor - w1_tensor);
 
         for (int f = 0; f < feature_size; ++f)

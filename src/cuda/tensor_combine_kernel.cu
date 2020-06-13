@@ -40,35 +40,37 @@ namespace {
         //dense_width
         const int dense_width = output.size(3);
 
-        //grid index and voxel index inside this grid.
-        int dense_h = (h*scale_factor_to_grid);
-        int dense_w = (w*scale_factor_to_grid);
-        int gh = dense_h >> 3;      // int gh = (h*scale_factor_to_grid) / 8;
-        int gw = dense_w >> 3;      // int gw = (w*scale_factor_to_grid) / 8;
-        int bh = dense_h - gh*8;    // int bh = (h*scale_factor) % 8;
-        int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
-    
-
-        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
-        const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
-        int level = tree_level(tree, bh, bw);
-
-        switch(level)
+        if(t < output.size(0) && c < output.size(1) && h < output.size(2) && w < output.size(2))
         {
-            case 0:
-                output[t][c][h][w] = input_l0[t][c][h][w];
-                break;
-            case 1:
-                output[t][c][h][w] = input_l1[t][c][h][w];
-                break;
-            case 2:
-                output[t][c][h][w] = input_l2[t][c][h][w];
-                break;
-            case 3:
-                output[t][c][h][w] = input_l3[t][c][h][w];
-                break;
-            default:
-                break;            
+            //grid index and voxel index inside this grid.
+            int grid_idx_h = (h*scale_factor_to_grid);
+            int grid_idx_w = (w*scale_factor_to_grid);
+            int gw = grid_idx_h >> 3 ;      //  
+            int gh = grid_idx_w >> 3;      // grid w h order is differ from tensor
+            int bw = grid_idx_h - gw*8;    // int bh = (h*scale_factor) % 8;
+            int bh = grid_idx_w - gh*8;    // int bw = (w*scale_factor) % 8;
+
+            int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
+            const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
+            int level = tree_level(tree, bh, bw);
+
+            switch(level)
+            {
+                case 0:
+                    output[t][c][h][w] = input_l0[t][c][h][w];
+                    break;
+                case 1:
+                    output[t][c][h][w] = input_l1[t][c][h][w];
+                    break;
+                case 2:
+                    output[t][c][h][w] = input_l2[t][c][h][w];
+                    break;
+                case 3:
+                    output[t][c][h][w] = input_l3[t][c][h][w];
+                    break;
+                default:
+                    break;            
+            }
         }
     }
 
@@ -95,33 +97,36 @@ namespace {
         //dense_width
         const int dense_width = grad_out.size(3);
 
-        //grid index and voxel index inside this grid.
-        int dense_h = (h*scale_factor_to_grid);
-        int dense_w = (w*scale_factor_to_grid);
-        int gh = dense_h >> 3;      // int gh = (h*scale_factor_to_grid) / 8;
-        int gw = dense_w >> 3;      // int gw = (w*scale_factor_to_grid) / 8;
-        int bh = dense_h - gh*8;    // int bh = (h*scale_factor) % 8;
-        int bw = dense_w - gw*8;    // int bw = (w*scale_factor) % 8;
-
-        int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
-        const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
-        int level = tree_level(tree, bh, bw);
-        switch(level)
+        if(t < grad_out.size(0) && c < grad_out.size(1) && h < grad_out.size(2) && w < grad_out.size(2))
         {
-            case 0:
-                grad_in_l0[t][c][h][w] = grad_out[t][c][h][w];
-                break;
-            case 1:
-                grad_in_l1[t][c][h][w] = grad_out[t][c][h][w];
-                break;
-            case 2:
-                grad_in_l2[t][c][h][w] = grad_out[t][c][h][w];
-                break;
-            case 3:
-                grad_in_l3[t][c][h][w] = grad_out[t][c][h][w];
-                break;
-            default:
-                break;            
+            //grid index and voxel index inside this grid.
+            int grid_idx_h = (h*scale_factor_to_grid);
+            int grid_idx_w = (w*scale_factor_to_grid);
+            int gw = grid_idx_h >> 3 ;      //  
+            int gh = grid_idx_w >> 3;      // grid w h order is differ from tensor
+            int bw = grid_idx_h - gw*8;    // int bh = (h*scale_factor) % 8;
+            int bh = grid_idx_w - gh*8;    // int bw = (w*scale_factor) % 8;
+
+            int grid_idx =quadtree_grid_idx(&stru, t, gh, gw);
+            const qt_tree_t* tree = quadtree_get_tree(&stru, grid_idx);
+            int level = tree_level(tree, bh, bw);
+            switch(level)
+            {
+                case 0:
+                    grad_in_l0[t][c][h][w] = grad_out[t][c][h][w];
+                    break;
+                case 1:
+                    grad_in_l1[t][c][h][w] = grad_out[t][c][h][w];
+                    break;
+                case 2:
+                    grad_in_l2[t][c][h][w] = grad_out[t][c][h][w];
+                    break;
+                case 3:
+                    grad_in_l3[t][c][h][w] = grad_out[t][c][h][w];
+                    break;
+                default:
+                    break;            
+            }
         }
     } 
 
