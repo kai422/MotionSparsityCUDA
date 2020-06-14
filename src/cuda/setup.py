@@ -19,6 +19,7 @@ setup(name="MotionSparsity",
                             'pooling_in_grid.cpp', 'pooling_in_grid_kernel.cu',
                             'grid_pool.cpp', 'grid_pool_kernel.cu',
                             'quadtree_kernel.cu',
+                            'resize.cpp',
                             'save_img.cpp', 'save_img_kernel.cu',
                             'pybind.cpp',
                         ])

@@ -196,6 +196,8 @@ namespace ms
         const auto height = grad_out.size(2);
         const auto width = grad_out.size(3);
         
+
+
         TORCH_CHECK(batch_size == stru_ptr->n, "MSError: expected tensors have the same batchsize with structure object");
         TORCH_CHECK(channel == stru_ptr->feature_size, "MSError: expected tensors have the same feature_size with structure object");
 

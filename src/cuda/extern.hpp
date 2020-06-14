@@ -36,6 +36,8 @@ namespace ms
 
     torch::Tensor pooling_in_grid(torch::Tensor input, ptr_wrapper<quadtree> stru);
 
+    void quadtree_resize_feature_size(ptr_wrapper<quadtree> stru_ptr, const int feature_size);
+
 } // namespace ms
 
 #endif

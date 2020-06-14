@@ -29,6 +29,7 @@ namespace
         int h2_tensor = int(h2 * scale_factor_to_dense);
         int w1_tensor = int(w1 * scale_factor_to_dense);
         int w2_tensor = int(w2 * scale_factor_to_dense);
+        // printf("%f %f %f %f\n", h1, h2, w1, w2);
 
         float val = 0;
         for (int h = h1_tensor; h < h2_tensor; ++h)
@@ -66,8 +67,11 @@ namespace
         //grid_width index
         const int gw = blockIdx.z;
 
+
         if (t < input.size(0) && c < input.size(1) && gh < stru.grid_height && gw < stru.grid_width)
         {
+
+
             int grid_idx = quadtree_grid_idx(&stru, t, gh, gw);
             qt_tree_t *tree = quadtree_get_tree(&stru, grid_idx);
 
@@ -120,6 +124,7 @@ namespace
                     }
                 }
             }
+            else
             {
                 pool_data_among_tensor(input, output, scale_factor_to_dense, t, c, centre_x - 4, centre_x + 4, centre_y - 4, centre_y + 4);
             }
@@ -149,7 +154,6 @@ torch::Tensor pooling_in_grid_cuda(
         auto output = torch::zeros_like(input);
 
         float scale_factor_to_dense = (float)height / (stru_ptr->grid_height * 8);
-
         const int threads = 512;
         const dim3 BLOCK_DIM(threads);
         const int blocks = (batch_size * channel + threads - 1) / threads;
