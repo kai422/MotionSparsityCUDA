@@ -18,4 +18,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m)
     m.def("quadtree_gridpool2x2_stru", &ms::quadtree_gridpool2x2_stru, "quadtree_gridpool2x2_stru(CUDA)");
     m.def("quadtree_resize_feature_size", &ms::quadtree_resize_feature_size, "quadtree_resize_feature_size");
     m.def("SaveQuadStruAsImg", &ms::SaveQuadStruAsImg);
+    m.def("print_quadtree_feature_size", &ms::print_quadtree_feature_size);
+    m.def("quadtree_copy", &ms::quadtree_copy);
+    m.def("quadtree_delete", &ms::quadtree_delete);
 }

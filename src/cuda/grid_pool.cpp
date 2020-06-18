@@ -17,7 +17,8 @@ namespace ms
     // C++ interface
     ptr_wrapper<quadtree> quadtree_gridpool2x2_stru(ptr_wrapper<quadtree> stru_ptr)
     {
-        return quadtree_gridpool2x2_stru_cuda(stru_ptr.get());
+        ptr_wrapper<quadtree> out = quadtree_gridpool2x2_stru_cuda(stru_ptr.get());
+        return out;
     }
 
 } // namespace ms

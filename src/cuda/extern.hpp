@@ -3,6 +3,7 @@
 
 #include "quadtree.hpp"
 #include "common.hpp"
+#include <iostream>
 
 namespace ms
 {
@@ -38,6 +39,13 @@ namespace ms
 
     void quadtree_resize_feature_size(ptr_wrapper<quadtree> stru_ptr, const int feature_size);
 
+    inline void print_quadtree_feature_size(ptr_wrapper<quadtree> stru_ptr)
+    {
+        std::cout << "feature_size: " << stru_ptr->feature_size << std::endl;
+    }
+
+    ptr_wrapper<quadtree> quadtree_copy(ptr_wrapper<quadtree> stru_ptr);
+    void quadtree_delete(ptr_wrapper<quadtree> stru_ptr);
 } // namespace ms
 
 #endif

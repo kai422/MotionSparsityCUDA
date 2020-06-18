@@ -25,3 +25,5 @@ void quadtree_clr_trees_gpu(quadtree *grid_d)
         grid_d->trees, n_tree_ints);
     CUDA_POST_KERNEL_CHECK;
 }
+
+
